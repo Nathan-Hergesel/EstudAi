@@ -133,36 +133,6 @@ gradle test
 
 ---
 
-## 🤝 Contribuição
-
-Contribuições, sugestões e correções são **bem-vindas**!  
-Você pode participar do desenvolvimento de duas formas:
-
-- Abrindo uma *issue* para relatar erros ou sugerir melhorias;
-- Enviando um *pull request* com novas funcionalidades.
-
-### Etapas de contribuição:
-
-1. Faça um **fork** do projeto.
-2. Crie uma nova branch:
-
-```bash
-git checkout -b feature/nova-funcionalidade
-```
-3. Realize as alterações desejadas e confirme o commit:
-
-```bash
-git commit -m "Adiciona nova funcionalidade"
-```
-4. Envie as alterações:
-
-```bash
-git push origin feature/nova-funcionalidade
-```
-5. Abra um **Pull Request** no repositório principal.
-
----
-
 ## 📜 Licença
 
 Este projeto está licenciado sob a **Licença MIT**.  

@@ -14,6 +14,8 @@ import {
 } from 'react-native';
 import globalStyles from '../global/styles';
 import { colors } from '../constants/colors';
+import { useAuth } from '../contexts/AuthContext';
+import * as supabaseService from '../services/supabase.service';
 
 /**
  * Estrutura de uma matéria
@@ -54,14 +56,16 @@ const MateriasModal: React.FC<MateriasModalProps> = ({
   materias,
   onSave,
 }) => {
+  const { user } = useAuth();
   // Estado local com a lista de matérias
   const [listaMaterias, setListaMaterias] = useState<Materia[]>(materias);
   // Estado para controlar edição de matéria específica
   const [editandoId, setEditandoId] = useState<number | null>(null);
   // Estado para adicionar nova matéria
   const [adicionando, setAdicionando] = useState(false);
+  const [salvando, setSalvando] = useState(false);
   // Estado do formulário de nova matéria
-  const [novaMateria, setNovaMateria] = useState<Omit<Materia, 'id'>>({
+  const [novaMateria, setNovaMateria] = useState<Omit<Materia, 'id' | 'user_id' | 'created_at' | 'updated_at'>>({
     nome: '',
     professor: '',
     cor: colors.primario,
@@ -86,30 +90,51 @@ const MateriasModal: React.FC<MateriasModalProps> = ({
   }, [materias, visible]);
 
   // Adiciona nova matéria
-  const handleAdicionarMateria = () => {
+  const handleAdicionarMateria = async () => {
     if (!novaMateria.nome.trim()) {
       Alert.alert('Erro', 'O nome da matéria é obrigatório');
       return;
     }
 
-    const novoId = Math.max(0, ...listaMaterias.map((m) => m.id)) + 1;
-    const materiaCompleta: Materia = {
-      id: novoId,
-      ...novaMateria,
-    };
+    if (!user) {
+      Alert.alert('Erro', 'Você precisa estar logado');
+      return;
+    }
 
-    setListaMaterias([...listaMaterias, materiaCompleta]);
-    setNovaMateria({
-      nome: '',
-      professor: '',
-      cor: colors.primario,
-      codigo: '',
-    });
-    setAdicionando(false);
+    setSalvando(true);
+    try {
+      const result = await supabaseService.criarMateria(user.id, {
+        nome: novaMateria.nome,
+        professor: novaMateria.professor || null,
+        codigo: novaMateria.codigo || null,
+        cor: novaMateria.cor,
+      });
+
+      if (result.success && result.data) {
+        const novaListaAtualizada = [...listaMaterias, result.data];
+        setListaMaterias(novaListaAtualizada);
+        onSave(novaListaAtualizada); // Atualiza o estado pai imediatamente
+        setNovaMateria({
+          nome: '',
+          professor: '',
+          cor: colors.primario,
+          codigo: '',
+        });
+        setAdicionando(false);
+        Alert.alert('Sucesso', 'Matéria adicionada com sucesso!');
+      } else {
+        Alert.alert('Erro', 'Não foi possível adicionar a matéria');
+      }
+    } catch (error) {
+      console.error('Erro ao adicionar matéria:', error);
+      Alert.alert('Erro', 'Não foi possível adicionar a matéria');
+    } finally {
+      setSalvando(false);
+    }
   };
 
   // Remove uma matéria
-  const handleRemoverMateria = (id: number) => {
+  const handleRemoverMateria = async (id: number) => {
     Alert.alert(
       'Confirmar Exclusão',
       'Tem certeza que deseja excluir esta matéria?',
@@ -118,19 +143,28 @@ const MateriasModal: React.FC<MateriasModalProps> = ({
         {
           text: 'Excluir',
           style: 'destructive',
-          onPress: () => {
-            setListaMaterias(listaMaterias.filter((m) => m.id !== id));
+          onPress: async () => {
+            setSalvando(true);
+            try {
+              const result = await supabaseService.removerMateria(id);
+              if (result.success) {
+                const novaListaAtualizada = listaMaterias.filter((m) => m.id !== id);
+                setListaMaterias(novaListaAtualizada);
+                onSave(novaListaAtualizada); // Atualiza o estado pai imediatamente
+                Alert.alert('Sucesso', 'Matéria removida com sucesso!');
+              } else {
+                Alert.alert('Erro', 'Não foi possível remover a matéria');
+              }
+            } catch (error) {
+              console.error('Erro ao remover matéria:', error);
+              Alert.alert('Erro', 'Não foi possível remover a matéria');
+            } finally {
+              setSalvando(false);
+            }
           },
         },
       ]
     );
-  };
-
-  // Salva todas as alterações
-  const handleSalvar = () => {
-    onSave(listaMaterias);
-    Alert.alert('Sucesso', 'Matérias atualizadas com sucesso!');
-    onClose();
   };
 
   // Renderiza um item de matéria
@@ -241,10 +275,11 @@ const MateriasModal: React.FC<MateriasModalProps> = ({
 
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <TouchableOpacity
-          style={[globalStyles.button, { flex: 1 }]}
+          style={[globalStyles.button, { flex: 1, opacity: salvando ? 0.6 : 1 }]}
           onPress={handleAdicionarMateria}
+          disabled={salvando}
         >
-          <Text style={globalStyles.buttonText}>Adicionar</Text>
+          <Text style={globalStyles.buttonText}>{salvando ? 'Salvando...' : 'Adicionar'}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[globalStyles.buttonSecondary, { flex: 1 }]}
@@ -257,6 +292,7 @@ const MateriasModal: React.FC<MateriasModalProps> = ({
               codigo: '',
             });
           }}
+          disabled={salvando}
         >
           <Text style={globalStyles.buttonSecondaryText}>Cancelar</Text>
         </TouchableOpacity>
@@ -324,8 +360,8 @@ const MateriasModal: React.FC<MateriasModalProps> = ({
 
         {/* Rodapé */}
         <View style={globalStyles.footer}>
-          <TouchableOpacity style={globalStyles.button} onPress={handleSalvar}>
-            <Text style={globalStyles.buttonText}>Salvar Alterações</Text>
+          <TouchableOpacity style={globalStyles.button} onPress={onClose}>
+            <Text style={globalStyles.buttonText}>Fechar</Text>
           </TouchableOpacity>
         </View>
       </View>

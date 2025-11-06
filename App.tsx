@@ -2,7 +2,7 @@
 // Renderiza uma das três telas: Tarefas, Agenda ou Conta
 import React, { useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import TarefasScreen from './src/pages/tarefas';
 import AgendaScreen from './src/pages/agenda';
@@ -11,10 +11,11 @@ import BottomNavigation from './src/components/Navegação-Inferior';
 import { colors } from './src/constants/colors';
 import LoginScreen from './src/pages/login';
 import { TasksProvider } from './src/hooks/TasksContext';
+import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 
-export default function App() {
+function MainApp() {
   const [currentScreen, setCurrentScreen] = useState('Tarefas');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { user, loading } = useAuth();
 
   // Retorna o componente da tela atual
   const renderScreen = () => {
@@ -24,38 +25,52 @@ export default function App() {
       case 'Agenda':
         return <AgendaScreen onNavigate={setCurrentScreen} />;
       case 'Conta':
-        return <ContaScreen />;
+        return <ContaScreen onNavigate={setCurrentScreen} />;
       default:
         return <TarefasScreen />;
     }
   };
 
-  if (!isLoggedIn) {
+  if (loading) {
     return (
-      <SafeAreaProvider>
-        <TasksProvider>
-          <SafeAreaView style={styles.container}>
-            <StatusBar style="dark" backgroundColor={colors.fundo} />
-            <View style={styles.content}>
-              <LoginScreen onLoginSuccess={() => setIsLoggedIn(true)} />
-            </View>
-          </SafeAreaView>
-        </TasksProvider>
-      </SafeAreaProvider>
+      <SafeAreaView style={styles.container}>
+        <View style={[styles.content, { justifyContent: 'center', alignItems: 'center' }]}>
+          <ActivityIndicator size="large" color={colors.primario} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!user) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar style="dark" backgroundColor={colors.fundo} />
+        <View style={styles.content}>
+          <LoginScreen />
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
+    <TasksProvider>
+      <SafeAreaView style={styles.container}>
+        {/* StatusBar com tema claro e fundo alinhado ao app */}
+        <StatusBar style="dark" backgroundColor={colors.fundo} />
+        <View style={styles.content}>{renderScreen()}</View>
+        {/* Navegação inferior controlada por estado local */}
+        <BottomNavigation activeTab={currentScreen} onNavigate={setCurrentScreen} />
+      </SafeAreaView>
+    </TasksProvider>
+  );
+}
+
+export default function App() {
+  return (
     <SafeAreaProvider>
-      <TasksProvider>
-        <SafeAreaView style={styles.container}>
-          {/* StatusBar com tema claro e fundo alinhado ao app */}
-          <StatusBar style="dark" backgroundColor={colors.fundo} />
-          <View style={styles.content}>{renderScreen()}</View>
-          {/* Navegação inferior controlada por estado local */}
-          <BottomNavigation activeTab={currentScreen} onNavigate={setCurrentScreen} />
-        </SafeAreaView>
-      </TasksProvider>
+      <AuthProvider>
+        <MainApp />
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }

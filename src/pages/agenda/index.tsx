@@ -36,7 +36,7 @@ interface AgendaScreenProps {
 }
 
 export default function AgendaScreen({ onNavigate }: AgendaScreenProps) {
-  const { tasks, addTask } = useTasks();
+  const { tasks, addTask, loading } = useTasks();
   const [modalVisible, setModalVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(() => {
@@ -258,7 +258,10 @@ export default function AgendaScreen({ onNavigate }: AgendaScreenProps) {
       <TarefaModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        onSave={(task) => addTask(task)}
+        onSave={async (task) => {
+          await addTask(task);
+          setModalVisible(false);
+        }}
         isEditing={isEditing}
       />
     </View>

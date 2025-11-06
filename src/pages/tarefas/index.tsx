@@ -196,22 +196,22 @@ export default function TarefasScreen() {
   };
 
   // Salva: atualiza se estiver editando, senão cria nova tarefa
-  const handleSaveTask = (taskData: Omit<Task, 'id'>) => {
+  const handleSaveTask = async (taskData: Omit<Task, 'id'>) => {
     if (isEditing && editingTask) {
-      updateTask(editingTask.id, taskData);
+      await updateTask(editingTask.id, taskData);
     } else {
-      addTask(taskData);
+      await addTask(taskData);
     }
   };
 
   // Remove tarefa
-  const handleDeleteTask = (id: number) => {
-    deleteTask(id);
+  const handleDeleteTask = async (id: number) => {
+    await deleteTask(id);
   };
 
   // Alterna status concluída/pendente
-  const handleToggleComplete = (id: number) => {
-    toggleTaskCompletion(id);
+  const handleToggleComplete = async (id: number) => {
+    await toggleTaskCompletion(id);
   };
 
   // Ativa/Desativa modo de seleção para edição em lote
