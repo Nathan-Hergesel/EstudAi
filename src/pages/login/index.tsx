@@ -36,7 +36,7 @@ export const LoginPage = () => {
   return (
     <View style={styles.container}>
       <View style={styles.card}>
-        <Image source={require('../../img/Logo EstudAI (1).png')} style={styles.logo} resizeMode="contain" />
+        <Image source={require('../../img/Logo EstudAI.png')} style={styles.logo} resizeMode="contain" />
         <Text style={styles.brand}>EstudAi</Text>
 
         <Text style={styles.title}>{isSignUp ? 'Criar sua conta' : 'Bem-vindo de volta'}</Text>

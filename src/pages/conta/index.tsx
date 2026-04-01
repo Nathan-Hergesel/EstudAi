@@ -165,7 +165,7 @@ export const ContaPage = () => {
       </Pressable>
 
       <View style={styles.footerBrand}>
-        <Image source={require('../../img/Logo EstudAI (1).png')} style={styles.footerLogo} resizeMode="contain" />
+        <Image source={require('../../img/Logo EstudAI.png')} style={styles.footerLogo} resizeMode="contain" />
         <Text style={styles.footerTitle}>EstudAi</Text>
         <Text style={styles.footerSubtitle}>{profile?.instituicao || 'Universidade de Sorocaba'}</Text>
         <Text style={styles.footerCaption}>{profile?.curso || 'Versão 2.0 | EnSUSU'}</Text>
