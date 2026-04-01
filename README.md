@@ -93,7 +93,7 @@ Comandos rapidos:
 
 ## Banco de dados
 
-Os scripts SQL estao em [SUPABASE/setup-database.sql](SUPABASE/setup-database.sql) e [SUPABASE/seed-test-data-nathan.sql](SUPABASE/seed-test-data-nathan.sql).
+O script SQL está em [SUPABASE/setup-database.sql](SUPABASE/setup-database.sql)
 
 ## Scripts disponiveis
 
@@ -101,12 +101,6 @@ Os scripts SQL estao em [SUPABASE/setup-database.sql](SUPABASE/setup-database.sq
 - android: abre no Android
 - ios: abre no iOS
 - web: abre no navegador
-
-## Proximos passos sugeridos
-
-- adicionar testes de interface para fluxos criticos
-- criar pipeline CI para lint e build
-- publicar release beta para validacao com usuarios
 
 ## Licenca
 
