@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "Estudai - 2.0",
+    "slug": "estudai-2-0",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/logo-app-v2.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/logo-splash-v2.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo-adaptive-v2.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/logo-favicon-v2.png"
+    },
+    "plugins": [
+      "@react-native-community/datetimepicker",
+      "expo-font"
+    ]
+  }
+}
