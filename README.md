@@ -123,16 +123,6 @@ O schema Prisma atual esta focado nas tabelas do app em `public` e na relacao co
 - `202604010001_baseline_clean`: baseline limpa do schema atual
 - `202604010002_teste`: migration de teste (vazia) aplicada
 
-### Comandos Prisma uteis
-
-```bash
-npx prisma validate
-npx prisma generate
-npx prisma migrate status
-npx prisma migrate deploy
-npx prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script
-```
-
 ## Scripts disponiveis
 
 - `start`: inicia o servidor Expo
