@@ -2,6 +2,13 @@ import { StyleSheet } from 'react-native';
 
 import { colors, radius, spacing } from '@/constants/tokens';
 
+const cardSpace = {
+  compactX: spacing.sm,
+  compactY: spacing.xs + 2,
+  regularX: spacing.sm + 2,
+  regularY: spacing.sm + 2
+} as const;
+
 export const styles = StyleSheet.create({
   screen: {
     backgroundColor: colors.surface,
@@ -71,8 +78,8 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.surfaceLowest,
     borderRadius: radius.md,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm,
+    paddingVertical: cardSpace.regularY,
+    paddingHorizontal: cardSpace.regularX,
     borderWidth: 1,
     borderColor: '#E7EBF1',
     minHeight: 96
@@ -115,26 +122,19 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.surfaceLowest,
-    borderWidth: 1,
-    borderColor: '#E7EBF1',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#D7DFEA',
     borderRadius: radius.md,
-    borderLeftWidth: 3,
-    borderLeftColor: '#D5DEEA',
     minHeight: 66,
-    paddingHorizontal: spacing.sm,
+    paddingVertical: cardSpace.compactY,
+    paddingHorizontal: cardSpace.compactX,
     gap: spacing.sm
-  },
-  actionRowHorarios: {
-    borderLeftColor: '#2F61B5'
-  },
-  actionRowMaterias: {
-    borderLeftColor: '#1FA66C'
   },
   actionIconWrap: {
     width: 30,
     height: 30,
     borderRadius: radius.md,
-    backgroundColor: '#E8EEF9',
+    backgroundColor: '#EFF3F8',
     alignItems: 'center',
     justifyContent: 'center'
   },
@@ -165,16 +165,14 @@ export const styles = StyleSheet.create({
     height: 24,
     borderRadius: radius.pill,
     paddingHorizontal: 8,
-    backgroundColor: '#EAF1FE',
-    borderWidth: 1,
-    borderColor: '#C8D9F8',
+    backgroundColor: '#EFF3F8',
     alignItems: 'center',
     justifyContent: 'center'
   },
   actionCountText: {
     fontFamily: 'Inter_700Bold',
     fontSize: 11,
-    color: '#1D4F9E'
+    color: '#51647F'
   },
   actionChevron: {
     marginRight: -2

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Easing, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Animated, Easing, Platform, StyleSheet, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import {
@@ -19,7 +19,7 @@ import { TasksProvider } from '@/hooks/TasksContext';
 import { AgendaPage } from '@/pages/agenda/index';
 import { ChatIAPage } from '@/pages/chat-ia/index';
 import { ContaPage } from '@/pages/conta/index';
-import { GruposPage } from '@/pages/grupos/index';
+import { GruposPage } from '@/pages/grupos';
 import { LoginPage } from '@/pages/login/index';
 import { TarefasPage } from '@/pages/tarefas/index';
 import { colors } from '@/constants/tokens';
@@ -28,6 +28,7 @@ type Screen = 'Agenda' | 'Tarefas' | 'Grupos' | 'ChatIA' | 'Conta';
 
 const MainApp = () => {
   const { user, loading } = useAuth();
+  const isWeb = Platform.OS === 'web';
   const [currentScreen, setCurrentScreen] = useState<Screen>('Tarefas');
   const transitionOpacity = useRef(new Animated.Value(1)).current;
   const transitionTranslate = useRef(new Animated.Value(0)).current;
@@ -68,7 +69,10 @@ const MainApp = () => {
 
   if (!user) {
     return (
-      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
+      <SafeAreaView
+        style={[styles.safeArea, isWeb && styles.webWidthLimiter]}
+        edges={['left', 'right', 'bottom']}
+      >
         <LoginPage />
       </SafeAreaView>
     );
@@ -79,7 +83,10 @@ const MainApp = () => {
       <View style={styles.app}>
         <LinearGradient colors={['#F7F9FB', '#FFFFFF']} style={StyleSheet.absoluteFill} />
 
-        <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+        <SafeAreaView
+          style={[styles.safeArea, isWeb && styles.webWidthLimiter]}
+          edges={['top', 'left', 'right']}
+        >
           <Animated.View
             style={[
               styles.content,
@@ -137,6 +144,11 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1
+  },
+  webWidthLimiter: {
+    width: '100%',
+    maxWidth: 560,
+    alignSelf: 'center'
   },
   content: {
     flex: 1

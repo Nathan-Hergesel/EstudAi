@@ -21,7 +21,6 @@ const toggles: ToggleItem[] = [
   { key: 'notificacoes_ativas', label: 'Notificações ativas' },
   { key: 'lembrete_tarefas', label: 'Lembrete de tarefas' },
   { key: 'alerta_vencimento', label: 'Alerta de vencimento' },
-  { key: 'tema_escuro', label: 'Tema escuro (preferência)' },
   { key: 'mostrar_concluidas', label: 'Mostrar concluídas' },
   { key: 'sincronizacao_auto', label: 'Sincronização automática' }
 ];

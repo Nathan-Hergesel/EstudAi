@@ -45,4 +45,3 @@ yarn-error.*
 /ios
 /android
 
-/generated/prisma

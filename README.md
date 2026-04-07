@@ -1,55 +1,56 @@
 # Estudai 2.0
 
-Aplicativo mobile para organizacao academica com foco em tarefas, agenda de estudos e produtividade.
+Aplicativo de organizacao academica com foco em planejamento, execucao e acompanhamento da rotina de estudos.
 
 ![Logo do projeto](src/img/Logo%20EstudAI.png)
 
-## Visao geral
+## Visao do produto
 
-O Estudai 2.0 centraliza a rotina de estudo em um unico app:
+O Estudai 2.0 reune, em uma experiencia unica, os fluxos essenciais da vida academica:
 
-- autenticacao de usuario
-- cadastro e acompanhamento de tarefas
-- agenda semanal e calendario mensal
-- controle de materias, horarios e configuracoes
-- indicadores de progresso academico
+- organizacao de tarefas por prioridade e contexto
+- visao de agenda para apoiar distribuicao de carga de estudo
+- colaboracao em grupos para compartilhamento de atividades
+- gestao de materias, horarios e preferencias pessoais
 
-## Arquitetura
+O objetivo central do projeto e reduzir friccao no dia a dia do estudante, oferecendo clareza sobre o que precisa ser feito, quando fazer e como acompanhar progresso.
 
-- Frontend: Expo + React Native
-- Backend/API: Supabase (Auth + Postgres + RLS)
-- Camada de dados no app: `@supabase/supabase-js`
-- Prisma: usado para schema e migrations do banco (nao roda no app React Native)
+## Arquitetura tecnica
 
-## Stack principal
+- Frontend mobile construído com Expo + React Native + TypeScript
+- Backend e persistencia suportados por Supabase (Auth e Postgres)
+- Controle de acesso baseado em RLS no banco
+- Camada de dados no app concentrada em servicos tipados
 
-- Expo 54
-- React Native 0.81
-- React 19
-- TypeScript
-- Supabase
-- Prisma 7
-- Expo Linear Gradient
-- React Native Safe Area Context
+## Dominios funcionais
 
-## Funcionalidades
+### Tarefas
 
-- login e cadastro com Supabase
-- gestao de tarefas com busca e filtros
-- acoes em lote para tarefas selecionadas
-- cartoes de tarefas concluidas recolhidos por padrao
-- agenda com visao semanal e seletor mensal
-- modais para editar perfil, materias e horarios
-- configuracoes de notificacao e preferencias
+- criacao, edicao e conclusao de tarefas
+- filtros e acoes em lote
+- suporte a materias cadastradas e texto livre
 
-## Estrutura do projeto
+### Agenda
+
+- visualizacao semanal e mensal
+- consolidacao de compromissos de estudo
+- destaque de estado de execucao das tarefas
+
+### Grupos
+
+- criacao e administracao de grupos de estudo
+- convite de integrantes por email
+- compartilhamento de tarefas e reunioes
+- visualizacao de integrantes e papeis
+
+### Conta
+
+- atualizacao de perfil e preferencias
+- organizacao de materias e horarios
+
+## Estrutura do repositorio
 
 ```text
-prisma/
-  migrations/
-    202604010001_baseline_clean/
-    202604010002_teste/
-  schema.prisma
 src/
   components/
   contexts/
@@ -66,69 +67,20 @@ src/
   utils/
 SUPABASE/
   setup-database.sql
-prisma.config.ts
 ```
 
-## Como executar localmente
+## Banco de dados
 
-### 1. Requisitos
+O arquivo [SUPABASE/setup-database.sql](SUPABASE/setup-database.sql) descreve o modelo de dados do projeto, incluindo tabelas, views, funcoes, politicas de seguranca e grants utilizados pelo aplicativo.
 
-- Node.js 20+
-- npm 9+
-- Expo CLI (via npx expo)
+## Direcao do projeto
 
-### 2. Instalar dependencias
+O Estudai 2.0 prioriza:
 
-```bash
-npm install
-```
-
-### 3. Configurar ambiente
-
-Crie o arquivo `.env` com as variaveis do Supabase e do Prisma:
-
-```env
-EXPO_PUBLIC_SUPABASE_URL=...
-EXPO_PUBLIC_SUPABASE_ANON_KEY=...
-
-DATABASE_URL=postgresql://...
-DIRECT_URL=postgresql://...
-```
-
-Observacao:
-
-- `DATABASE_URL` e `DIRECT_URL` sao lidas pelo Prisma em `prisma.config.ts`.
-- Em ambiente local, pode usar a mesma URL nas duas variaveis.
-
-### 4. Rodar o app
-
-```bash
-npm run start
-```
-
-Comandos rapidos:
-
-- Android: `npm run android`
-- iOS: `npm run ios`
-- Web: `npm run web`
-
-## Banco de dados e migrations
-
-O script SQL base esta em [SUPABASE/setup-database.sql](SUPABASE/setup-database.sql).
-
-O schema Prisma atual esta focado nas tabelas do app em `public` e na relacao com `auth.users`.
-
-### Estado atual das migrations
-
-- `202604010001_baseline_clean`: baseline limpa do schema atual
-- `202604010002_teste`: migration de teste (vazia) aplicada
-
-## Scripts disponiveis
-
-- `start`: inicia o servidor Expo
-- `android`: abre no Android
-- `ios`: abre no iOS
-- `web`: abre no navegador
+- experiencia mobile direta e objetiva
+- consistencia visual entre modulos
+- seguranca de dados com politicas explicitas de acesso
+- evolucao incremental guiada por necessidades reais de uso academico
 
 ## Licenca
 

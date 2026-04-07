@@ -1,10 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 import { ConfiguracoesModal } from '@/components/ConfiguracoesModal';
 import { EditarPerfilModal } from '@/components/EditarPerfilModal';
-import { HorariosModal } from '@/components/HorariosModal';
 import { MateriasModal } from '@/components/MateriasModal';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTasks } from '@/hooks/TasksContext';
@@ -13,7 +12,7 @@ import { Configuracao, HorarioCompleto, Materia } from '@/types/database.types';
 import { parseUiDate, startOfDay } from '@/utils/date';
 import { styles } from '@/pages/conta/styles';
 
-type ModalKind = 'perfil' | 'materias' | 'horarios' | 'config' | null;
+type ModalKind = 'perfil' | 'materias' | 'config' | null;
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
@@ -25,8 +24,12 @@ type QuickAction = {
 };
 
 const quickActions: QuickAction[] = [
-  { id: 'horarios', title: 'Horários', subtitle: 'Grade do semestre atual', icon: 'calendar-clock-outline' },
-  { id: 'materias', title: 'Matérias', subtitle: 'Conteúdos e materiais', icon: 'book-open-page-variant-outline' },
+  {
+    id: 'materias',
+    title: 'Matérias',
+    subtitle: 'Cada matéria com os horários da semana',
+    icon: 'book-open-page-variant-outline'
+  },
   { id: 'perfil', title: 'Editar Conta', subtitle: 'Dados pessoais e senha', icon: 'account-edit-outline' },
   { id: 'config', title: 'Configurações', subtitle: 'Preferências do aplicativo', icon: 'cog-outline' }
 ];
@@ -38,6 +41,10 @@ export const ContaPage = () => {
   const [materias, setMaterias] = useState<Materia[]>([]);
   const [horarios, setHorarios] = useState<HorarioCompleto[]>([]);
   const [configuracoes, setConfiguracoes] = useState<Configuracao | null>(null);
+
+  const showError = (fallback: string, error?: string) => {
+    Alert.alert('Erro', error || fallback);
+  };
 
   const loadData = async () => {
     if (!user?.id) return;
@@ -125,16 +132,12 @@ export const ContaPage = () => {
 
       <View style={styles.actionsList}>
         {quickActions.map((action) => {
-          const actionCount = action.id === 'horarios' ? horarios.length : action.id === 'materias' ? materias.length : null;
+          const actionCount = action.id === 'materias' ? materias.length : null;
 
           return (
             <Pressable
               key={action.id || 'none'}
-              style={[
-                styles.actionRow,
-                action.id === 'horarios' ? styles.actionRowHorarios : null,
-                action.id === 'materias' ? styles.actionRowMaterias : null
-              ]}
+              style={styles.actionRow}
               onPress={() => setActiveModal(action.id)}
             >
               <View style={styles.actionIconWrap}>
@@ -166,9 +169,9 @@ export const ContaPage = () => {
 
       <View style={styles.footerBrand}>
         <Image source={require('../../img/Logo EstudAI.png')} style={styles.footerLogo} resizeMode="contain" />
-        <Text style={styles.footerTitle}>EstudAi</Text>
+        <Text style={styles.footerTitle}>EstudAí</Text>
         <Text style={styles.footerSubtitle}>{profile?.instituicao || 'Universidade de Sorocaba'}</Text>
-        <Text style={styles.footerCaption}>{profile?.curso || 'Versão 2.0 | EnSUSU'}</Text>
+        <Text style={styles.footerCaption}>{profile?.curso || 'Versão 2.0 | Desenvolvido por alunos'}</Text>
       </View>
 
       <EditarPerfilModal
@@ -177,7 +180,13 @@ export const ContaPage = () => {
         onClose={() => setActiveModal(null)}
         onSave={async (payload) => {
           if (!user?.id) return;
-          await supabaseService.atualizarPerfil(user.id, payload);
+
+          const result = await supabaseService.atualizarPerfil(user.id, payload);
+          if (!result.success) {
+            showError('Não foi possível atualizar o perfil.', result.error);
+            return;
+          }
+
           await refreshProfile();
         }}
       />
@@ -185,36 +194,49 @@ export const ContaPage = () => {
       <MateriasModal
         visible={activeModal === 'materias'}
         materias={materias}
-        onClose={() => setActiveModal(null)}
-        onAdd={async (payload) => {
-          if (!user?.id) return;
-          await supabaseService.criarMateria({ ...payload, user_id: user.id });
-          await loadData();
-        }}
-        onDelete={async (id) => {
-          await supabaseService.removerMateria(id);
-          await loadData();
-        }}
-      />
-
-      <HorariosModal
-        visible={activeModal === 'horarios'}
-        materias={materias}
         horarios={horarios}
         onClose={() => setActiveModal(null)}
         onAdd={async (payload) => {
           if (!user?.id) return;
-          await supabaseService.criarHorario({
+
+          const result = await supabaseService.criarMateria({ ...payload, user_id: user.id });
+          if (!result.success) {
+            throw new Error(result.error || 'Falha ao criar matéria.');
+          }
+
+          await loadData();
+        }}
+        onDelete={async (id) => {
+          const result = await supabaseService.removerMateria(id);
+          if (!result.success) {
+            throw new Error(result.error || 'Falha ao remover matéria.');
+          }
+
+          await loadData();
+        }}
+        onAddHorario={async (payload) => {
+          if (!user?.id) return;
+
+          const result = await supabaseService.criarHorario({
             user_id: user.id,
             materia_id: payload.materiaId,
             dia_semana: payload.dia,
             hora_inicio: payload.inicio,
             hora_fim: payload.fim
           });
+
+          if (!result.success) {
+            throw new Error(result.error || 'Falha ao criar horário.');
+          }
+
           await loadData();
         }}
-        onDelete={async (id) => {
-          await supabaseService.removerHorario(id);
+        onDeleteHorario={async (id) => {
+          const result = await supabaseService.removerHorario(id);
+          if (!result.success) {
+            throw new Error(result.error || 'Falha ao remover horário.');
+          }
+
           await loadData();
         }}
       />
@@ -226,7 +248,11 @@ export const ContaPage = () => {
         onChange={async (updates) => {
           if (!user?.id) return;
           const result = await supabaseService.atualizarConfiguracoes(user.id, updates);
-          if (!result.success) return;
+          if (!result.success) {
+            showError('Não foi possível salvar as configurações.', result.error);
+            return;
+          }
+
           setConfiguracoes(result.data || null);
         }}
       />

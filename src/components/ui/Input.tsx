@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { InputAccessoryView, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
+import { InputAccessoryView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import { colors, radius, spacing } from '@/constants/tokens';
 import { useKeyboardPreview } from '@/contexts/KeyboardPreviewContext';
@@ -14,6 +15,7 @@ type InputProps = {
   multiline?: boolean;
   showKeyboardPreview?: boolean;
   secureRevealDurationMs?: number;
+  showPasswordToggle?: boolean;
 };
 
 export const Input = ({
@@ -25,15 +27,19 @@ export const Input = ({
   keyboardType = 'default',
   multiline,
   showKeyboardPreview = false,
-  secureRevealDurationMs = 0
+  secureRevealDurationMs = 0,
+  showPasswordToggle = false
 }: InputProps) => {
   const [isFocused, setIsFocused] = useState(false);
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [revealedIndex, setRevealedIndex] = useState<number | null>(null);
   const { showPreview, updatePreview, hidePreview } = useKeyboardPreview();
   const accessoryId = useRef(`input-preview-${Math.random().toString(36).slice(2, 10)}`).current;
   const revealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const useDelayedSecureMask = !!secureTextEntry && secureRevealDurationMs > 0 && !multiline;
+  const effectiveSecureTextEntry = !!secureTextEntry && !isPasswordVisible;
+  const useDelayedSecureMask = effectiveSecureTextEntry && secureRevealDurationMs > 0 && !multiline;
+  const canTogglePassword = !!secureTextEntry && showPasswordToggle && !multiline;
 
   const clearRevealTimer = () => {
     if (!revealTimeoutRef.current) return;
@@ -43,9 +49,9 @@ export const Input = ({
 
   const previewValue = useMemo(() => {
     if (!value) return 'Digite para visualizar aqui';
-    if (secureTextEntry) return '•'.repeat(Math.min(value.length, 28));
+    if (effectiveSecureTextEntry) return '•'.repeat(Math.min(value.length, 28));
     return value;
-  }, [value, secureTextEntry]);
+  }, [value, effectiveSecureTextEntry]);
 
   const maskedDisplayValue = useMemo(() => {
     if (!useDelayedSecureMask || !value) return '';
@@ -69,6 +75,11 @@ export const Input = ({
       clearRevealTimer();
     }
   }, [useDelayedSecureMask]);
+
+  useEffect(() => {
+    if (secureTextEntry) return;
+    setIsPasswordVisible(false);
+  }, [secureTextEntry]);
 
   useEffect(
     () => () => {
@@ -105,11 +116,12 @@ export const Input = ({
             value={value}
             onChangeText={handleChangeText}
             placeholder={placeholder}
-            secureTextEntry={useDelayedSecureMask ? false : secureTextEntry}
+            secureTextEntry={useDelayedSecureMask ? false : effectiveSecureTextEntry}
             keyboardType={keyboardType}
             placeholderTextColor={colors.muted}
             style={[
               styles.input,
+              canTogglePassword ? styles.inputWithRightAction : null,
               multiline ? styles.multiline : null,
               useDelayedSecureMask ? styles.hiddenSecureText : null
             ]}
@@ -119,7 +131,7 @@ export const Input = ({
               if (showKeyboardPreview && Platform.OS === 'android') {
                 showPreview({
                   value,
-                  secure: !!secureTextEntry,
+                  secure: effectiveSecureTextEntry,
                   multiline: !!multiline
                 });
               }
@@ -139,6 +151,22 @@ export const Input = ({
             <View pointerEvents="none" style={styles.maskOverlay}>
               <Text style={styles.maskOverlayText}>{maskedDisplayValue}</Text>
             </View>
+          ) : null}
+
+          {canTogglePassword ? (
+            <Pressable
+              onPress={() => setIsPasswordVisible((prev) => !prev)}
+              style={styles.passwordToggle}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel={isPasswordVisible ? 'Ocultar senha' : 'Mostrar senha'}
+            >
+              <Ionicons
+                name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
+                size={19}
+                color="#637085"
+              />
+            </Pressable>
           ) : null}
         </View>
       </View>
@@ -179,8 +207,20 @@ const styles = StyleSheet.create({
     color: colors.onSurface,
     fontSize: 14
   },
+  inputWithRightAction: {
+    paddingRight: spacing.xl + spacing.md
+  },
   inputFrame: {
     position: 'relative'
+  },
+  passwordToggle: {
+    position: 'absolute',
+    right: spacing.sm,
+    top: 0,
+    bottom: 0,
+    width: 32,
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   hiddenSecureText: {
     color: 'transparent'

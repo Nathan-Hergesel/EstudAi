@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 
 import { Button } from '@/components/ui/Button';
@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input';
 import { ModalSheet } from '@/components/ui/ModalSheet';
 import { colors, radius, spacing } from '@/constants/tokens';
 import { Task, TaskType } from '@/types/app.types';
+import { Materia } from '@/types/database.types';
 import { formatUiDate, parseUiDate } from '@/utils/date';
 
 type Props = {
@@ -14,6 +15,8 @@ type Props = {
   onClose: () => void;
   onSave: (task: Omit<Task, 'id' | 'completed'>) => Promise<void>;
   initialTask?: Task | null;
+  materias: Materia[];
+  onResolveMateriaName?: (materiaName: string) => Promise<string | null>;
 };
 
 type TypeOption = {
@@ -32,13 +35,24 @@ const typeOptions: TypeOption[] = [
   { value: 'PROVA', label: 'PROVA', prova: true }
 ];
 
-export const TarefaModal = ({ visible, onClose, onSave, initialTask }: Props) => {
+export const TarefaModal = ({
+  visible,
+  onClose,
+  onSave,
+  initialTask,
+  materias,
+  onResolveMateriaName
+}: Props) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState('');
   const [selectedDateTime, setSelectedDateTime] = useState(() => new Date());
   const [activePicker, setActivePicker] = useState<null | 'date' | 'time'>(null);
   const [type, setType] = useState<TaskType>('ATIVIDADE');
+  const [subjectMode, setSubjectMode] = useState<'registered' | 'custom'>('registered');
+  const [selectedMateriaId, setSelectedMateriaId] = useState<string | null>(null);
+  const [customMateriaName, setCustomMateriaName] = useState('');
+  const [subjectError, setSubjectError] = useState('');
 
   const pad = (value: number): string => `${value}`.padStart(2, '0');
   const formatDate = (value: Date): string => `${pad(value.getDate())}/${pad(value.getMonth() + 1)}/${value.getFullYear()}`;
@@ -53,6 +67,10 @@ export const TarefaModal = ({ visible, onClose, onSave, initialTask }: Props) =>
       setDate(formatUiDate(now.toISOString()));
       setActivePicker(null);
       setType('ATIVIDADE');
+      setSubjectMode('registered');
+      setSelectedMateriaId(null);
+      setCustomMateriaName('');
+      setSubjectError('');
       return;
     }
 
@@ -65,6 +83,10 @@ export const TarefaModal = ({ visible, onClose, onSave, initialTask }: Props) =>
     setDate(formatUiDate(safeDate.toISOString()));
     setActivePicker(null);
     setType(initialTask.type);
+    setSubjectMode('registered');
+    setSelectedMateriaId(initialTask.materiaId || null);
+    setCustomMateriaName('');
+    setSubjectError('');
   }, [initialTask, visible]);
 
   const handlePickerChange = (event: DateTimePickerEvent, value?: Date) => {
@@ -93,21 +115,150 @@ export const TarefaModal = ({ visible, onClose, onSave, initialTask }: Props) =>
   const pickerMode = activePicker === 'date' ? 'date' : 'time';
 
   const submit = async () => {
-    if (!title || !description || !date) return;
+    if (!title.trim() || !description.trim() || !date) return;
+
+    setSubjectError('');
+
+    let materiaId: string | null = null;
+
+    if (subjectMode === 'registered') {
+      materiaId = selectedMateriaId;
+    } else {
+      const materiaName = customMateriaName.trim();
+
+      if (materiaName) {
+        if (!onResolveMateriaName) {
+          setSubjectError('Não foi possível salvar essa matéria agora.');
+          return;
+        }
+
+        const resolvedMateriaId = await onResolveMateriaName(materiaName);
+        if (!resolvedMateriaId) {
+          setSubjectError('Não foi possível usar essa matéria. Tente novamente.');
+          return;
+        }
+
+        materiaId = resolvedMateriaId;
+      }
+    }
+
     await onSave({
-      title,
-      description,
+      title: title.trim(),
+      description: description.trim(),
       date,
       type,
-      materiaId: initialTask?.materiaId || null
+      materiaId
     });
+
     onClose();
   };
+
+  const selectedMateriaExists = selectedMateriaId ? materias.some((item) => item.id === selectedMateriaId) : false;
 
   return (
     <ModalSheet visible={visible} title={initialTask ? 'Editar tarefa' : 'Nova tarefa'} onClose={onClose}>
       <Input label="Título" value={title} onChangeText={setTitle} placeholder="Ex: Revisão de cálculo" />
       <Input label="Descrição" value={description} onChangeText={setDescription} multiline />
+
+      <View style={styles.sectionCard}>
+        <Text style={styles.groupTitle}>Matéria</Text>
+
+        <View style={styles.subjectModeRow}>
+          <Pressable
+            style={[styles.subjectModeChip, subjectMode === 'registered' ? styles.subjectModeChipActive : null]}
+            onPress={() => setSubjectMode('registered')}
+          >
+            <Text
+              style={[
+                styles.subjectModeText,
+                subjectMode === 'registered' ? styles.subjectModeTextActive : null
+              ]}
+            >
+              Cadastrada
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={[styles.subjectModeChip, subjectMode === 'custom' ? styles.subjectModeChipActive : null]}
+            onPress={() => setSubjectMode('custom')}
+          >
+            <Text style={[styles.subjectModeText, subjectMode === 'custom' ? styles.subjectModeTextActive : null]}>
+              Não Cadastrada
+            </Text>
+          </Pressable>
+        </View>
+
+        {subjectMode === 'registered' ? (
+          materias.length === 0 ? (
+            <Text style={styles.subjectHint}>Nenhuma matéria cadastrada. Use texto livre para criar uma nova.</Text>
+          ) : (
+            <View style={styles.subjectSelectBox}>
+              <ScrollView
+                style={styles.subjectSelectScroll}
+                contentContainerStyle={styles.subjectSelectContent}
+                nestedScrollEnabled
+                showsVerticalScrollIndicator
+              >
+                <Pressable
+                  style={[styles.subjectSelectItem, !selectedMateriaId ? styles.subjectSelectItemSelected : null]}
+                  onPress={() => setSelectedMateriaId(null)}
+                >
+                  <Text
+                    style={[
+                      styles.subjectSelectItemText,
+                      !selectedMateriaId ? styles.subjectSelectItemTextSelected : null
+                    ]}
+                  >
+                    Sem matéria
+                  </Text>
+                </Pressable>
+
+                {materias.map((materia, index) => {
+                  const isActive = selectedMateriaId === materia.id;
+                  const isLast = index === materias.length - 1;
+
+                  return (
+                    <Pressable
+                      key={materia.id}
+                      style={[
+                        styles.subjectSelectItem,
+                        isActive ? styles.subjectSelectItemSelected : null,
+                        isLast ? styles.subjectSelectItemLast : null
+                      ]}
+                      onPress={() => setSelectedMateriaId(materia.id)}
+                    >
+                      <Text
+                        style={[
+                          styles.subjectSelectItemText,
+                          isActive ? styles.subjectSelectItemTextSelected : null
+                        ]}
+                      >
+                        {materia.nome}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )
+        ) : (
+          <>
+            <Input
+              label="Nome da matéria"
+              value={customMateriaName}
+              onChangeText={setCustomMateriaName}
+              placeholder="Ex: História Medieval"
+            />
+            <Text style={styles.subjectHint}>Se não existir, essa matéria será criada automaticamente.</Text>
+          </>
+        )}
+
+        {selectedMateriaId && !selectedMateriaExists ? (
+          <Text style={styles.subjectError}>A matéria selecionada anteriormente não está mais cadastrada.</Text>
+        ) : null}
+
+        {subjectError ? <Text style={styles.subjectError}>{subjectError}</Text> : null}
+      </View>
 
       <View style={styles.sectionCard}>
         <Text style={styles.groupTitle}>Data e horário</Text>
@@ -224,6 +375,105 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.xs
+  },
+  subjectModeRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+    marginBottom: spacing.xs
+  },
+  subjectModeChip: {
+    minHeight: 30,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: '#D7E1EE',
+    backgroundColor: '#F5F8FC',
+    paddingHorizontal: 12,
+    justifyContent: 'center'
+  },
+  subjectModeChipActive: {
+    borderColor: '#BFD4F8',
+    backgroundColor: '#E4EEFF'
+  },
+  subjectModeText: {
+    fontFamily: 'Inter_600SemiBold',
+    color: '#55708F',
+    fontSize: 11
+  },
+  subjectModeTextActive: {
+    color: '#1E4A88',
+    fontFamily: 'Inter_700Bold'
+  },
+  subjectOptionChip: {
+    minHeight: 30,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: '#DCE5F2',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    justifyContent: 'center'
+  },
+  subjectOptionChipSelected: {
+    borderColor: '#AAC5F2',
+    backgroundColor: '#DDEBFF'
+  },
+  subjectOptionText: {
+    fontFamily: 'Inter_600SemiBold',
+    color: '#4F6888',
+    fontSize: 11
+  },
+  subjectOptionTextSelected: {
+    fontFamily: 'Inter_700Bold',
+    color: '#1A447F'
+  },
+  subjectSelectBox: {
+    marginTop: spacing.xs,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: '#DDE5EF',
+    backgroundColor: '#FFFFFF',
+    maxHeight: 154,
+    overflow: 'hidden'
+  },
+  subjectSelectScroll: {
+    maxHeight: 154
+  },
+  subjectSelectContent: {
+    paddingVertical: 2
+  },
+  subjectSelectItem: {
+    minHeight: 36,
+    paddingHorizontal: spacing.sm,
+    justifyContent: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EAF0F8'
+  },
+  subjectSelectItemLast: {
+    borderBottomWidth: 0
+  },
+  subjectSelectItemSelected: {
+    backgroundColor: '#E6F0FF'
+  },
+  subjectSelectItemText: {
+    fontFamily: 'Inter_600SemiBold',
+    color: '#3F5B7E',
+    fontSize: 12
+  },
+  subjectSelectItemTextSelected: {
+    fontFamily: 'Inter_700Bold',
+    color: '#1A447F'
+  },
+  subjectHint: {
+    marginTop: spacing.xs,
+    color: '#6F8198',
+    fontFamily: 'Inter_500Medium',
+    fontSize: 11
+  },
+  subjectError: {
+    marginTop: spacing.xs,
+    color: '#BE3B3B',
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 11
   },
   dateTimeRow: {
     flexDirection: 'row',

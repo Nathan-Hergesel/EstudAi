@@ -2,6 +2,16 @@ import { StyleSheet } from 'react-native';
 
 import { colors, radius, spacing } from '@/constants/tokens';
 
+const cardSpace = {
+  compactX: spacing.sm,
+  compactY: spacing.xs + 2,
+  regularX: spacing.sm + 2,
+  regularY: spacing.sm + 2,
+  spaciousX: spacing.sm + 4,
+  spaciousY: spacing.sm + 4
+} as const;
+const DARK_BLUE = '#072C78';
+
 export const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -48,9 +58,72 @@ export const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: '#E5EAF1',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm,
+    paddingVertical: cardSpace.regularY,
+    paddingHorizontal: cardSpace.regularX,
     gap: spacing.xs
+  },
+  registeredCard: {
+    backgroundColor: '#F7FAFF',
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: '#DBE6F4',
+    paddingVertical: cardSpace.regularY,
+    paddingHorizontal: cardSpace.regularX,
+    gap: spacing.xs
+  },
+  registeredHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  registeredTitle: {
+    fontFamily: 'Inter_700Bold',
+    color: '#17355F',
+    fontSize: 13
+  },
+  registeredMeta: {
+    fontFamily: 'Inter_600SemiBold',
+    color: '#6680A5',
+    fontSize: 11
+  },
+  registeredHint: {
+    color: '#647D9E',
+    fontFamily: 'Inter_500Medium',
+    fontSize: 11
+  },
+  registerWeekdaysRow: {
+    marginTop: 2,
+    flexDirection: 'row',
+    justifyContent: 'space-between'
+  },
+  registerWeekdayChip: {
+    width: 42,
+    minHeight: 32,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: '#E1E8F1',
+    backgroundColor: '#EEF2F7',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  registerWeekdayChipActive: {
+    backgroundColor: DARK_BLUE,
+    borderColor: DARK_BLUE
+  },
+  registerWeekdayChipText: {
+    fontFamily: 'Inter_500Medium',
+    color: '#324863',
+    fontSize: 10,
+    letterSpacing: 0.5
+  },
+  registerWeekdayChipTextActive: {
+    fontFamily: 'Inter_700Bold',
+    color: '#FFFFFF'
+  },
+  registerWeekdayHelper: {
+    color: '#6A7F9E',
+    fontFamily: 'Inter_500Medium',
+    fontSize: 10
   },
   weekHeaderRow: {
     flexDirection: 'row',
@@ -78,7 +151,7 @@ export const styles = StyleSheet.create({
     backgroundColor: '#F4F6F9'
   },
   dayButtonActive: {
-    backgroundColor: '#0A3D9F'
+    backgroundColor: DARK_BLUE
   },
   dayButtonText: {
     fontFamily: 'Inter_600SemiBold',
@@ -114,8 +187,8 @@ export const styles = StyleSheet.create({
   },
   studyCard: {
     borderRadius: radius.md,
-    padding: spacing.sm,
-    marginTop: spacing.xs,
+    paddingVertical: cardSpace.spaciousY,
+    paddingHorizontal: cardSpace.spaciousX,
     gap: spacing.xs
   },
   studyTopRow: {
@@ -179,7 +252,6 @@ export const styles = StyleSheet.create({
     lineHeight: 14
   },
   sectionTitle: {
-    marginTop: spacing.sm,
     fontFamily: 'Manrope_700Bold',
     color: '#1B2B45',
     fontSize: 23
@@ -189,10 +261,15 @@ export const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: '#E6EAF0',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: cardSpace.regularX,
+    paddingVertical: cardSpace.regularY,
     borderLeftWidth: 3,
     gap: 4
+  },
+  commitmentCardCompleted: {
+    backgroundColor: '#F7F9FC',
+    borderColor: '#DDE5F0',
+    opacity: 0.82
   },
   provaTone: {
     borderLeftColor: '#EA4242'
@@ -210,6 +287,23 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs
+  },
+  commitmentDoneBadge: {
+    borderRadius: radius.pill,
+    minHeight: 18,
+    paddingHorizontal: 7,
+    borderWidth: 1,
+    borderColor: '#C1E7D2',
+    backgroundColor: '#E7F6EE',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4
+  },
+  commitmentDoneBadgeText: {
+    fontFamily: 'Inter_700Bold',
+    color: '#1B8E54',
+    fontSize: 8,
+    letterSpacing: 0.35
   },
   typeBadge: {
     borderRadius: radius.pill,
@@ -241,6 +335,10 @@ export const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 20
   },
+  commitmentTitleCompleted: {
+    color: '#5F6978',
+    textDecorationLine: 'line-through'
+  },
   commitmentFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -251,6 +349,9 @@ export const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 11
   },
+  commitmentMetaCompleted: {
+    color: '#98A1AE'
+  },
   commitmentMoreIcon: {
     marginRight: -2
   },
@@ -259,7 +360,8 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E6EAF0',
     backgroundColor: colors.surfaceLowest,
-    padding: spacing.md
+    paddingVertical: cardSpace.regularY,
+    paddingHorizontal: cardSpace.regularX
   },
   emptyTitle: {
     fontFamily: 'Inter_700Bold',
@@ -271,44 +373,6 @@ export const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     marginTop: 2,
     fontSize: 12
-  },
-  bottomStatsRow: {
-    marginTop: spacing.xs,
-    flexDirection: 'row',
-    gap: spacing.xs
-  },
-  bottomStatCard: {
-    flex: 1,
-    backgroundColor: colors.surfaceLowest,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: '#E7ECF2',
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    minHeight: 78
-  },
-  bottomStatLabel: {
-    color: '#A0A8B4',
-    fontFamily: 'Inter_700Bold',
-    fontSize: 8,
-    letterSpacing: 0.8
-  },
-  bottomStatValue: {
-    color: '#1D2B43',
-    fontFamily: 'Inter_700Bold',
-    fontSize: 30,
-    lineHeight: 32,
-    marginTop: 2
-  },
-  bottomStatHint: {
-    color: '#2AB486',
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 9
-  },
-  bottomStatWarn: {
-    color: '#DB4343',
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 9
   },
   fab: {
     position: 'absolute',
@@ -381,7 +445,7 @@ export const styles = StyleSheet.create({
     opacity: 0.42
   },
   monthPickerDayActive: {
-    backgroundColor: '#0A3D9F'
+    backgroundColor: DARK_BLUE
   },
   monthPickerDayText: {
     fontFamily: 'Inter_600SemiBold',
@@ -417,5 +481,62 @@ export const styles = StyleSheet.create({
   },
   monthPickerDayBadgeTextActive: {
     color: '#123C90'
+  },
+  weekdayModalList: {
+    gap: spacing.xs
+  },
+  weekdayModalItem: {
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: '#DFE8F5',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: cardSpace.regularX,
+    paddingVertical: cardSpace.regularY,
+    gap: spacing.xs
+  },
+  weekdayModalItemHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs
+  },
+  weekdayModalDot: {
+    width: 10,
+    height: 10,
+    borderRadius: radius.pill
+  },
+  weekdayModalSubject: {
+    flex: 1,
+    color: '#1D2E46',
+    fontFamily: 'Inter_700Bold',
+    fontSize: 14
+  },
+  weekdayModalTimeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs
+  },
+  weekdayModalTime: {
+    color: '#446189',
+    fontFamily: 'Inter_500Medium',
+    fontSize: 12
+  },
+  weekdayModalEmptyCard: {
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: '#E1E8F4',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: cardSpace.regularX,
+    paddingVertical: cardSpace.regularY,
+    gap: spacing.xs
+  },
+  weekdayModalEmptyTitle: {
+    color: '#20324C',
+    fontFamily: 'Inter_700Bold',
+    fontSize: 14
+  },
+  weekdayModalEmptyText: {
+    color: '#6C7F99',
+    fontFamily: 'Inter_500Medium',
+    fontSize: 12
   },
 });

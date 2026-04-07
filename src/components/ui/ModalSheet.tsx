@@ -2,7 +2,7 @@ import React, { ReactNode } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
-import { colors, radius, spacing } from '@/constants/tokens';
+import { radius, spacing } from '@/constants/tokens';
 
 type Props = {
   visible: boolean;

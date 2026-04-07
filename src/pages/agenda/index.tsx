@@ -1,10 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 import { ModalSheet } from '@/components/ui/ModalSheet';
+import { useAuth } from '@/contexts/AuthContext';
 import { useTasks } from '@/hooks/TasksContext';
+import { supabaseService } from '@/services/supabase.service';
+import { HorarioCompleto, Materia } from '@/types/database.types';
 import { parseUiDate, sameDay, startOfDay } from '@/utils/date';
 import { styles } from '@/pages/agenda/styles';
 import { Task } from '@/types/app.types';
@@ -14,6 +17,25 @@ type Props = {
 };
 
 const weekLabels = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB', 'DOM'] as const;
+const weekdayOptions = [
+  { value: 1, label: 'SEG' },
+  { value: 2, label: 'TER' },
+  { value: 3, label: 'QUA' },
+  { value: 4, label: 'QUI' },
+  { value: 5, label: 'SEX' },
+  { value: 6, label: 'SÁB' },
+  { value: 0, label: 'DOM' }
+] as const;
+
+const shortDayLabels: Record<number, string> = {
+  0: 'Domingo',
+  1: 'Segunda',
+  2: 'Terça',
+  3: 'Quarta',
+  4: 'Quinta',
+  5: 'Sexta',
+  6: 'Sábado'
+};
 
 const ESTIMATED_MINUTES_BY_TYPE: Record<Task['type'], number> = {
   PROVA: 120,
@@ -58,13 +80,47 @@ const capitalize = (value: string): string => {
 };
 
 export const AgendaPage = ({ onGoTasks }: Props) => {
+  const { user } = useAuth();
   const { tasks } = useTasks();
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
   const [monthModalVisible, setMonthModalVisible] = useState(false);
+  const [weekdayModalVisible, setWeekdayModalVisible] = useState(false);
+  const [selectedWeekday, setSelectedWeekday] = useState<number>(() => new Date().getDay());
+  const [materias, setMaterias] = useState<Materia[]>([]);
+  const [horarios, setHorarios] = useState<HorarioCompleto[]>([]);
   const [monthCursor, setMonthCursor] = useState<Date>(() => {
     const current = new Date();
     return new Date(current.getFullYear(), current.getMonth(), 1);
   });
+
+  useEffect(() => {
+    const loadRegisterData = async () => {
+      if (!user?.id) {
+        setMaterias([]);
+        setHorarios([]);
+        return;
+      }
+
+      const [materiasResult, horariosResult] = await Promise.all([
+        supabaseService.listarMaterias(user.id),
+        supabaseService.listarHorarios(user.id)
+      ]);
+
+      if (materiasResult.success && materiasResult.data) {
+        setMaterias(materiasResult.data);
+      }
+
+      if (horariosResult.success && horariosResult.data) {
+        const sortedHorarios = [...horariosResult.data].sort((a, b) => {
+          if (a.dia_semana !== b.dia_semana) return a.dia_semana - b.dia_semana;
+          return a.hora_inicio.localeCompare(b.hora_inicio);
+        });
+        setHorarios(sortedHorarios);
+      }
+    };
+
+    void loadRegisterData();
+  }, [user?.id]);
 
   const tasksCountByDay = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -146,12 +202,50 @@ export const AgendaPage = ({ onGoTasks }: Props) => {
       .sort((a, b) => toTaskDate(a.date).getTime() - toTaskDate(b.date).getTime());
   }, [selectedDate, tasks]);
 
-  const suggestedMinutes = selectedTasks.reduce((acc, task) => acc + taskDurationMinutes(task.type), 0);
+  const materiasById = useMemo(() => {
+    const map: Record<string, Materia> = {};
+    materias.forEach((materia) => {
+      map[materia.id] = materia;
+    });
+    return map;
+  }, [materias]);
 
-  const completed = tasks.filter((task) => task.completed).length;
-  const focusTotal = tasks.length > 0 ? Math.round((completed / tasks.length) * 100) : 0;
-  const pendingCount = tasks.filter((task) => !task.completed).length;
-  const focusHint = tasks.length > 0 ? `${completed} de ${tasks.length} concluídas` : 'Sem tarefas registradas';
+  const schedulesByWeekday = useMemo(() => {
+    const grouped: Record<
+      number,
+      Array<{ id: string; materiaNome: string; materiaCor: string; horaInicio: string; horaFim: string }>
+    > = {};
+
+    horarios.forEach((horario) => {
+      const materia = materiasById[horario.materia_id];
+      if (!grouped[horario.dia_semana]) {
+        grouped[horario.dia_semana] = [];
+      }
+
+      grouped[horario.dia_semana].push({
+        id: horario.id,
+        materiaNome: horario.materia_nome || materia?.nome || 'Matéria',
+        materiaCor: materia?.cor || '#2563EB',
+        horaInicio: horario.hora_inicio,
+        horaFim: horario.hora_fim
+      });
+    });
+
+    Object.keys(grouped).forEach((weekday) => {
+      grouped[Number(weekday)].sort((a, b) => a.horaInicio.localeCompare(b.horaInicio));
+    });
+
+    return grouped;
+  }, [horarios, materiasById]);
+
+  const selectedWeekdaySchedules = useMemo(
+    () => schedulesByWeekday[selectedWeekday] || [],
+    [schedulesByWeekday, selectedWeekday]
+  );
+
+  const selectedWeekdayLabel = shortDayLabels[selectedWeekday] || `Dia ${selectedWeekday}`;
+
+  const suggestedMinutes = selectedTasks.reduce((acc, task) => acc + taskDurationMinutes(task.type), 0);
 
   const renderCommitmentCard = (task: Task, keyPrefix: string) => {
     const due = toTaskDate(task.date);
@@ -165,7 +259,11 @@ export const AgendaPage = ({ onGoTasks }: Props) => {
             : styles.leituraTone;
 
     return (
-      <Pressable key={`${keyPrefix}${task.id}`} style={[styles.commitmentCard, typeTone]} onPress={onGoTasks}>
+      <Pressable
+        key={`${keyPrefix}${task.id}`}
+        style={[styles.commitmentCard, typeTone, task.completed && styles.commitmentCardCompleted]}
+        onPress={onGoTasks}
+      >
         <View style={styles.commitmentHeader}>
           <View
             style={[
@@ -181,12 +279,22 @@ export const AgendaPage = ({ onGoTasks }: Props) => {
           >
             <Text style={styles.typeBadgeText}>{typeBadgeLabel(task.type)}</Text>
           </View>
+
+          {task.completed ? (
+            <View style={styles.commitmentDoneBadge}>
+              <MaterialCommunityIcons name="check-circle" size={11} color="#1B8E54" />
+              <Text style={styles.commitmentDoneBadgeText}>CONCLUÍDA</Text>
+            </View>
+          ) : null}
         </View>
 
-        <Text style={styles.commitmentTitle}>{task.title}</Text>
+        <Text style={[styles.commitmentTitle, task.completed && styles.commitmentTitleCompleted]}>{task.title}</Text>
 
         <View style={styles.commitmentFooter}>
-          <Text style={styles.commitmentMeta}>{`${relativeDateLabel(due, selectedDate)}, ${pad(due.getHours())}:${pad(due.getMinutes())}`}</Text>
+          <Text style={[styles.commitmentMeta, task.completed && styles.commitmentMetaCompleted]}>
+            {`${relativeDateLabel(due, selectedDate)}, ${pad(due.getHours())}:${pad(due.getMinutes())}`}
+          </Text>
+
           <MaterialCommunityIcons name="dots-vertical" size={16} color="#8D97A6" style={styles.commitmentMoreIcon} />
         </View>
       </Pressable>
@@ -239,7 +347,37 @@ export const AgendaPage = ({ onGoTasks }: Props) => {
           </View>
         </View>
 
-        <LinearGradient colors={['#0C358D', '#082A73']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.studyCard}>
+        <View style={styles.registeredCard}>
+          <View style={styles.registeredHeader}>
+            <Text style={styles.registeredTitle}>Matérias e horários</Text>
+            <Text style={styles.registeredMeta}>{`${materias.length} matéria(s)`}</Text>
+          </View>
+          <Text style={styles.registeredHint}>{`${horarios.length} horário(s) vinculados às matérias cadastradas.`}</Text>
+
+          <View style={styles.registerWeekdaysRow}>
+            {weekdayOptions.map((weekday) => {
+              const active = selectedWeekday === weekday.value;
+
+              return (
+                <Pressable
+                  key={`weekday-${weekday.value}`}
+                  style={[styles.registerWeekdayChip, active && styles.registerWeekdayChipActive]}
+                  onPress={() => {
+                    setSelectedWeekday(weekday.value);
+                    setWeekdayModalVisible(true);
+                  }}
+                >
+                  <Text style={[styles.registerWeekdayChipText, active && styles.registerWeekdayChipTextActive]}>
+                    {weekday.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text style={styles.registerWeekdayHelper}>Toque em um dia para ver as aulas desse período.</Text>
+        </View>
+
+        <LinearGradient colors={['#08236E', '#00174F']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.studyCard}>
           <View style={styles.studyTopRow}>
             <Text style={styles.studyLabel}>TEMPO SUGERIDO</Text>
             <View style={styles.studyBadge}>
@@ -276,19 +414,6 @@ export const AgendaPage = ({ onGoTasks }: Props) => {
           tomorrowTasks.map((task) => renderCommitmentCard(task, 'tomorrow-'))
         )}
 
-        <View style={styles.bottomStatsRow}>
-          <View style={styles.bottomStatCard}>
-            <Text style={styles.bottomStatLabel}>FOCO TOTAL</Text>
-            <Text style={styles.bottomStatValue}>{`${focusTotal}%`}</Text>
-            <Text style={styles.bottomStatHint}>{focusHint}</Text>
-          </View>
-
-          <View style={styles.bottomStatCard}>
-            <Text style={styles.bottomStatLabel}>PENDÊNCIAS</Text>
-            <Text style={styles.bottomStatValue}>{pad(pendingCount)}</Text>
-            <Text style={styles.bottomStatWarn}>{pendingCount > 0 ? 'Urgência Alta' : 'No prazo'}</Text>
-          </View>
-        </View>
       </ScrollView>
 
       <ModalSheet visible={monthModalVisible} title="Calendário mensal" onClose={() => setMonthModalVisible(false)}>
@@ -361,6 +486,35 @@ export const AgendaPage = ({ onGoTasks }: Props) => {
             );
           })}
         </View>
+      </ModalSheet>
+
+      <ModalSheet
+        visible={weekdayModalVisible}
+        title={`Aulas de ${selectedWeekdayLabel}`}
+        onClose={() => setWeekdayModalVisible(false)}
+      >
+        {selectedWeekdaySchedules.length === 0 ? (
+          <View style={styles.weekdayModalEmptyCard}>
+            <Text style={styles.weekdayModalEmptyTitle}>Sem aulas cadastradas</Text>
+            <Text style={styles.weekdayModalEmptyText}>{`Não há aulas para ${selectedWeekdayLabel.toLowerCase()}.`}</Text>
+          </View>
+        ) : (
+          <View style={styles.weekdayModalList}>
+            {selectedWeekdaySchedules.map((item) => (
+              <View key={`weekday-class-${item.id}`} style={styles.weekdayModalItem}>
+                <View style={styles.weekdayModalItemHeader}>
+                  <View style={[styles.weekdayModalDot, { backgroundColor: item.materiaCor }]} />
+                  <Text style={styles.weekdayModalSubject}>{item.materiaNome}</Text>
+                </View>
+
+                <View style={styles.weekdayModalTimeRow}>
+                  <MaterialCommunityIcons name="clock-time-four-outline" size={14} color="#2C4E7E" />
+                  <Text style={styles.weekdayModalTime}>{`${item.horaInicio} - ${item.horaFim}`}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
       </ModalSheet>
     </View>
   );
