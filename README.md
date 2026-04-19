@@ -69,6 +69,12 @@ SUPABASE/
   setup-database.sql
 ```
 
+## Execucao local
+
+- `npm start` inicia o Expo em modo LAN, sem depender do tunel ngrok.
+- `npm run start:tunnel` continua disponivel quando for necessario expor o app por tunel.
+- `npm run start:local` mantem o comando padrao do Expo para ajustes manuais de conexao.
+
 ## Banco de dados
 
 O arquivo [SUPABASE/setup-database.sql](SUPABASE/setup-database.sql) descreve o modelo de dados do projeto, incluindo tabelas, views, funcoes, politicas de seguranca e grants utilizados pelo aplicativo.
