@@ -1,13 +1,6 @@
--- EstudAI 2.0 - Setup completo Supabase
--- Execute este arquivo no SQL Editor do Supabase.
-
 begin;
 
 create extension if not exists pgcrypto;
-
--- =========================================
--- Tabelas
--- =========================================
 
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -123,10 +116,6 @@ create table if not exists public.reunioes_grupo (
 alter table public.configuracoes
 drop column if exists tema_escuro;
 
--- =========================================
--- Triggers
--- =========================================
-
 create or replace function public.update_updated_at_column()
 returns trigger
 language plpgsql
@@ -239,10 +228,6 @@ after insert on auth.users
 for each row
 execute function public.handle_new_user();
 
--- =========================================
--- Views
--- =========================================
-
 create or replace view public.tarefas_completas as
 select
   t.id,
@@ -324,10 +309,6 @@ select
 from public.reunioes_grupo rg
 join public.grupos_estudo g on g.id = rg.grupo_id
 left join public.profiles p on p.id = rg.criado_por;
-
--- =========================================
--- RPCs
--- =========================================
 
 create or replace function public.get_tarefas_pendentes(usuario_id uuid)
 returns setof public.tarefas_completas
@@ -476,10 +457,6 @@ begin
 end;
 $$;
 
--- =========================================
--- Indices
--- =========================================
-
 create index if not exists idx_materias_user_id on public.materias(user_id);
 create index if not exists idx_tarefas_user_id on public.tarefas(user_id);
 create index if not exists idx_tarefas_materia_id on public.tarefas(materia_id);
@@ -494,10 +471,6 @@ create index if not exists idx_tarefas_comp_grupo_tarefa_id on public.tarefas_co
 create index if not exists idx_tarefas_salvas_user_id on public.tarefas_salvas_grupo(user_id);
 create index if not exists idx_reunioes_grupo_grupo_id on public.reunioes_grupo(grupo_id);
 create index if not exists idx_reunioes_grupo_data on public.reunioes_grupo(data_reuniao);
-
--- =========================================
--- RLS + Policies
--- =========================================
 
 alter table public.profiles enable row level security;
 alter table public.materias enable row level security;
@@ -799,12 +772,6 @@ using (
       and g.owner_id = auth.uid()
   )
 );
-
--- Views executam com invoker, então RLS das tabelas-base é aplicada.
-
--- =========================================
--- Grants
--- =========================================
 
 grant usage on schema public to authenticated, service_role;
 grant select, insert, update, delete on all tables in schema public to authenticated;

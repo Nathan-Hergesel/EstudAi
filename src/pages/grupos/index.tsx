@@ -187,8 +187,6 @@ export const GruposPage = () => {
         .map((item) => {
           const mine = item.compartilhado_por === user?.id;
           const alreadySaved = Boolean(savedSharedIds[item.id]);
-
-          // Para quem recebeu a tarefa, ao salvar ela sai do feed do grupo.
           if (!mine && alreadySaved) return null;
 
           return {

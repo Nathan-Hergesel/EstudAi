@@ -70,7 +70,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await AsyncStorage.setItem(REMEMBER_SESSION_KEY, rememberSession ? 'true' : 'false');
     } catch {
-      // Ignora falhas de persistencia para nao bloquear autenticacao.
     }
   };
 
@@ -84,7 +83,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           await supabase.auth.signOut({ scope: 'local' });
         }
       } catch {
-        // Em caso de falha, segue com leitura de sessao atual.
       }
 
       const { data } = await supabase.auth.getSession();

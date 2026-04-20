@@ -104,10 +104,10 @@ export const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     fontSize: 11
   },
-  sessionsList: {
+  topicList: {
     gap: spacing.xs
   },
-  sessionCard: {
+  topicCard: {
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: '#E3E9F2',
@@ -119,7 +119,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm
   },
-  sessionIconWrap: {
+  topicIconWrap: {
     width: 32,
     height: 32,
     borderRadius: radius.md,
@@ -127,15 +127,15 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center'
   },
-  sessionTexts: {
+  topicTexts: {
     flex: 1
   },
-  sessionTitle: {
+  topicTitle: {
     color: '#1C2C45',
     fontFamily: 'Inter_700Bold',
     fontSize: 14
   },
-  sessionSubtitle: {
+  topicSubtitle: {
     marginTop: 2,
     color: '#76839A',
     fontFamily: 'Inter_500Medium',
