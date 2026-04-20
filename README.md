@@ -71,9 +71,9 @@ SUPABASE/
 
 ## Execucao local
 
-- `npm start` inicia o Expo em modo LAN, sem depender do tunel ngrok.
+- `npm start` inicia o aplicativo em modo LAN.
 - `npm run start:tunnel` continua disponivel quando for necessario expor o app por tunel.
-- `npm run start:local` mantem o comando padrao do Expo para ajustes manuais de conexao.
+- `npm run android`, `npm run ios` e `npm run web` seguem como atalhos por plataforma.
 
 ## Banco de dados
 
