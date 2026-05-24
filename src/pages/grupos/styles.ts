@@ -3,6 +3,10 @@ import { StyleSheet } from 'react-native';
 import { colors, radius, spacing } from '@/constants/tokens';
 
 export const styles = StyleSheet.create({
+  pageRoot: {
+    flex: 1,
+    backgroundColor: colors.surface
+  },
   screen: {
     backgroundColor: colors.surface,
     paddingHorizontal: spacing.md,
@@ -26,52 +30,6 @@ export const styles = StyleSheet.create({
     fontSize: 32,
     lineHeight: 40,
     paddingBottom: 2
-  },
-  heroCard: {
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    gap: spacing.xs
-  },
-  heroLabel: {
-    color: '#9EC0FF',
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 10,
-    letterSpacing: 0.8
-  },
-  heroTitle: {
-    color: '#FFFFFF',
-    fontFamily: 'Manrope_700Bold',
-    fontSize: 29,
-    lineHeight: 33
-  },
-  heroPillsRow: {
-    marginTop: spacing.xs,
-    flexDirection: 'row',
-    gap: spacing.xs
-  },
-  heroPill: {
-    flex: 1,
-    borderRadius: radius.md,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    backgroundColor: 'rgba(255,255,255,0.14)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.22)',
-    minHeight: 62,
-    justifyContent: 'center'
-  },
-  heroPillValue: {
-    color: '#FFFFFF',
-    fontFamily: 'Inter_700Bold',
-    fontSize: 22,
-    lineHeight: 24
-  },
-  heroPillLabel: {
-    marginTop: 2,
-    color: '#D8E5FF',
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 10
   },
   sectionTitle: {
     marginTop: spacing.xs,
@@ -111,6 +69,16 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#D7E1F0',
     backgroundColor: '#F4F8FE',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  groupLeaveButton: {
+    width: 30,
+    height: 30,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: '#F0CFD0',
+    backgroundColor: '#FFF2F2',
     alignItems: 'center',
     justifyContent: 'center'
   },
@@ -167,13 +135,6 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: spacing.sm
   },
-  inviteText: {
-    flex: 1,
-    color: '#2A3D5A',
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 12,
-    lineHeight: 16
-  },
   inviteAcceptButton: {
     minHeight: 28,
     borderRadius: radius.pill,
@@ -183,6 +144,20 @@ export const styles = StyleSheet.create({
   },
   inviteAcceptText: {
     color: '#FFFFFF',
+    fontFamily: 'Inter_700Bold',
+    fontSize: 11
+  },
+  inviteDeleteButton: {
+    minHeight: 28,
+    borderRadius: radius.pill,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#E8C6C6',
+    backgroundColor: '#FFF3F3',
+    justifyContent: 'center'
+  },
+  inviteDeleteText: {
+    color: '#8A3E3E',
     fontFamily: 'Inter_700Bold',
     fontSize: 11
   },
@@ -255,6 +230,11 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#CFE0F8',
     backgroundColor: '#EAF2FF'
+  },
+  roomHeaderActionLeave: {
+    borderWidth: 1,
+    borderColor: '#F0CFD0',
+    backgroundColor: '#FFF2F2'
   },
   roomScroll: {
     flex: 1
@@ -354,6 +334,21 @@ export const styles = StyleSheet.create({
   },
   roomTaskSaveText: {
     color: '#FFFFFF',
+    fontFamily: 'Inter_700Bold',
+    fontSize: 10
+  },
+  roomTaskSavedChip: {
+    alignSelf: 'flex-start',
+    minHeight: 24,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: '#BDD1EE',
+    backgroundColor: '#EAF3FF',
+    paddingHorizontal: 10,
+    justifyContent: 'center'
+  },
+  roomTaskSavedText: {
+    color: '#1E4F8F',
     fontFamily: 'Inter_700Bold',
     fontSize: 10
   },

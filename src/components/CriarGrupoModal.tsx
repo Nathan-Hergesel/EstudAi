@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { ModalSheet } from '@/components/ui/ModalSheet';
 import { radius, spacing } from '@/constants/tokens';
+import { normalizeEmail, parseEmailDraft } from '@/utils/email';
 
 type CriarGrupoPayload = {
   nome: string;
@@ -23,10 +24,6 @@ type Props = {
   onClose: () => void;
   onSubmit: (payload: CriarGrupoPayload) => Promise<CriarGrupoResult>;
 };
-
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
-
-const normalizeEmail = (value: string): string => value.trim().toLowerCase();
 
 export const CriarGrupoModal = ({ visible, loading = false, onClose, onSubmit }: Props) => {
   const [nome, setNome] = useState('');
@@ -48,23 +45,12 @@ export const CriarGrupoModal = ({ visible, loading = false, onClose, onSubmit }:
   }, [visible]);
 
   const adicionarEmailsDoRascunho = () => {
-    const candidatos = emailDraft
-      .split(/[\s,;]+/)
-      .map(normalizeEmail)
-      .filter(Boolean);
-
-    if (candidatos.length === 0) {
-      setError('Digite pelo menos um e-mail válido para adicionar.');
+    const parsed = parseEmailDraft(emailDraft, true);
+    if (parsed.error) {
+      setError(parsed.error);
       return;
     }
-
-    const invalidos = candidatos.filter((email) => !EMAIL_REGEX.test(email));
-    if (invalidos.length > 0) {
-      setError(`E-mail inválido: ${invalidos[0]}`);
-      return;
-    }
-
-    setEmails((prev) => [...prev, ...candidatos]);
+    setEmails((prev) => [...prev, ...parsed.emails]);
     setEmailDraft('');
     setError('');
   };
@@ -80,15 +66,27 @@ export const CriarGrupoModal = ({ visible, loading = false, onClose, onSubmit }:
       return;
     }
 
+    const parsedDraft = parseEmailDraft(emailDraft, false);
+    if (parsedDraft.error) {
+      setError(parsedDraft.error);
+      return;
+    }
+
+    const emailsParaConvidar = Array.from(
+      new Set([...emails, ...parsedDraft.emails].map(normalizeEmail))
+    );
+
     setError('');
 
-    const result = await onSubmit({
-      nome: nomeNormalizado,
-      emails: emailsDeduplicados
-    });
+    const result = await onSubmit({ nome: nomeNormalizado, emails: emailsParaConvidar });
 
     if (!result.success) {
       setError(result.error || 'Não foi possível criar o grupo.');
+      return;
+    }
+
+    if (parsedDraft.emails.length > 0) {
+      setEmailDraft('');
     }
   };
 

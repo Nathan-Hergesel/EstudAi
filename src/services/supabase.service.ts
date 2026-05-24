@@ -39,6 +39,21 @@ const traduzirErroAuth = (message: string): string => {
   return message;
 };
 
+const sortMembers = (members: GrupoMembroDetalhado[]): GrupoMembroDetalhado[] =>
+  [...members].sort((a, b) => {
+    if (a.papel !== b.papel) return a.papel === 'owner' ? -1 : 1;
+    return (a.nome || '').toLowerCase().localeCompare((b.nome || '').toLowerCase());
+  });
+
+const isMissingFunctionError = (message: string, functionName: string): boolean => {
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes('function') &&
+    normalized.includes(functionName.toLowerCase()) &&
+    normalized.includes('does not exist')
+  );
+};
+
 export const supabaseService = {
   async login(email: string, password: string): Promise<Result<unknown>> {
     try {
@@ -275,17 +290,7 @@ export const supabaseService = {
         }>
       );
 
-      mapped.sort((a, b) => {
-        if (a.papel === b.papel) {
-          const nomeA = (a.nome || '').toLowerCase();
-          const nomeB = (b.nome || '').toLowerCase();
-          return nomeA.localeCompare(nomeB);
-        }
-
-        return a.papel === 'owner' ? -1 : 1;
-      });
-
-      return { success: true, data: mapped };
+      return { success: true, data: sortMembers(mapped) };
     }
 
     const rpcErrorLower = rpcResult.error.message.toLowerCase();
@@ -315,17 +320,7 @@ export const supabaseService = {
       }>
     );
 
-    mapped.sort((a, b) => {
-      if (a.papel === b.papel) {
-        const nomeA = (a.nome || '').toLowerCase();
-        const nomeB = (b.nome || '').toLowerCase();
-        return nomeA.localeCompare(nomeB);
-      }
-
-      return a.papel === 'owner' ? -1 : 1;
-    });
-
-    return { success: true, data: mapped };
+    return { success: true, data: sortMembers(mapped) };
   },
 
   async criarGrupoEstudo(payload: Pick<GrupoEstudo, 'nome' | 'descricao'>): Promise<Result<GrupoEstudo>> {
@@ -412,6 +407,29 @@ export const supabaseService = {
     return error ? { success: false, error: error.message } : { success: true, data: null };
   },
 
+  async sairDoGrupo(grupoId: string, userId: string): Promise<Result<null>> {
+    const { error } = await supabase
+      .from('grupos_membros')
+      .delete()
+      .eq('grupo_id', grupoId)
+      .eq('user_id', userId);
+
+    if (error) {
+      const rawError = error.message.toLowerCase();
+
+      if (rawError.includes('row-level security') || rawError.includes('permission denied')) {
+        return {
+          success: false,
+          error: 'Sem permissão para sair deste grupo. Atualize as políticas no banco e tente novamente.'
+        };
+      }
+
+      return { success: false, error: error.message };
+    }
+
+    return { success: true, data: null };
+  },
+
   async convidarMembrosPorEmail(grupoId: string, emails: string[]): Promise<Result<ConviteGrupoResult[]>> {
     const emailsNormalizados = Array.from(
       new Set(
@@ -425,12 +443,55 @@ export const supabaseService = {
       return { success: true, data: [] };
     }
 
-    const { data, error } = await supabase.rpc('convidar_membros_grupo_por_email', {
-      grupo_uuid: grupoId,
-      emails_lista: emailsNormalizados
-    });
+    const executeInviteRpc = () =>
+      supabase.rpc('convidar_membros_grupo_por_email', {
+        grupo_uuid: grupoId,
+        emails_lista: emailsNormalizados
+      });
 
-    if (error) return { success: false, error: error.message };
+    let { data, error } = await executeInviteRpc();
+
+    if (error) {
+      const rawError = error.message.toLowerCase();
+      const shouldRetryWithRefresh =
+        rawError.includes('row-level security') ||
+        rawError.includes('usuário não autenticado') ||
+        rawError.includes('usuario nao autenticado') ||
+        rawError.includes('jwt') ||
+        rawError.includes('token');
+
+      if (shouldRetryWithRefresh) {
+        const { error: refreshError } = await supabase.auth.refreshSession();
+        if (!refreshError) {
+          const retry = await executeInviteRpc();
+          data = retry.data;
+          error = retry.error;
+        }
+      }
+    }
+
+    if (error) {
+      const rawError = error.message.toLowerCase();
+
+      if (isMissingFunctionError(error.message, 'convidar_membros_grupo_por_email')) {
+        return {
+          success: false,
+          error:
+            'Função de convites não encontrada no banco. Atualize o schema executando o arquivo SUPABASE/setup-database.sql.'
+        };
+      }
+
+      if (rawError.includes('sem permissão')) {
+        return { success: false, error: 'Somente o dono do grupo pode enviar convites.' };
+      }
+
+      if (rawError.includes('usuário não autenticado') || rawError.includes('usuario nao autenticado')) {
+        return { success: false, error: 'Sessão expirada. Faça login novamente.' };
+      }
+
+      return { success: false, error: error.message };
+    }
+
     return { success: true, data: (data || []) as ConviteGrupoResult[] };
   },
 
@@ -459,13 +520,37 @@ export const supabaseService = {
   },
 
   async salvarTarefaCompartilhada(payload: Omit<TarefaSalvaGrupo, 'created_at'>): Promise<Result<TarefaSalvaGrupo>> {
+    const selectSavedTask = async () => {
+      const selected = await supabase
+        .from('tarefas_salvas_grupo')
+        .select('*')
+        .eq('tarefa_compartilhada_id', payload.tarefa_compartilhada_id)
+        .eq('user_id', payload.user_id)
+        .single();
+
+      if (selected.error) {
+        return { success: false as const, error: selected.error.message };
+      }
+
+      return { success: true as const, data: selected.data as TarefaSalvaGrupo };
+    };
+
     const { data, error } = await supabase
       .from('tarefas_salvas_grupo')
-      .upsert(payload, { onConflict: 'tarefa_compartilhada_id,user_id' })
+      .insert(payload)
       .select('*')
       .single();
 
-    if (error) return { success: false, error: error.message };
+    if (error) {
+      const rawError = error.message.toLowerCase();
+      const isDuplicate = error.code === '23505' || rawError.includes('duplicate') || rawError.includes('unique');
+      if (isDuplicate) {
+        return selectSavedTask();
+      }
+
+      return { success: false, error: error.message };
+    }
+
     return { success: true, data: data as TarefaSalvaGrupo };
   },
 
@@ -495,5 +580,12 @@ export const supabaseService = {
 
     if (error) return { success: false, error: error.message };
     return { success: true, data: data as ReuniaoGrupo };
+  },
+
+  async removerReuniaoGrupo(reuniaoId: string): Promise<Result<null>> {
+    const { error } = await supabase.from('reunioes_grupo').delete().eq('id', reuniaoId);
+
+    if (error) return { success: false, error: error.message };
+    return { success: true, data: null };
   }
 };

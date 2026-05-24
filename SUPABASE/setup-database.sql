@@ -384,13 +384,16 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+#variable_conflict use_column
 declare
-  solicitante uuid := auth.uid();
-  email_item text;
-  email_normalizado text;
-  target_user_id uuid;
+  v_solicitante uuid := auth.uid();
+  v_email_item text;
+  v_email_normalizado text;
+  v_target_user_id uuid;
+  v_target_email text;
+  v_target_nome text;
 begin
-  if solicitante is null then
+  if v_solicitante is null then
     raise exception 'Usuário não autenticado';
   end if;
 
@@ -400,9 +403,9 @@ begin
 
   if not exists (
     select 1
-    from public.grupos_estudo g
+    from public.grupos_estudo as g
     where g.id = grupo_uuid
-      and g.owner_id = solicitante
+      and g.owner_id = v_solicitante
   ) then
     raise exception 'Sem permissão para convidar membros neste grupo';
   end if;
@@ -411,48 +414,59 @@ begin
     return;
   end if;
 
-  foreach email_item in array emails_lista loop
-    email_normalizado := lower(trim(email_item));
+  foreach v_email_item in array emails_lista loop
+    v_email_normalizado := lower(trim(v_email_item));
 
-    if email_normalizado = '' then
+    if v_email_normalizado = '' then
       continue;
     end if;
 
-    select p.id
-    into target_user_id
-    from public.profiles p
-    where lower(p.email) = email_normalizado
+    v_target_user_id := null;
+    v_target_email := null;
+    v_target_nome := null;
+
+    select
+      u.id,
+      lower(u.email),
+      coalesce(u.raw_user_meta_data ->> 'nome', split_part(u.email, '@', 1))
+    into v_target_user_id, v_target_email, v_target_nome
+    from auth.users as u
+    where lower(u.email) = v_email_normalizado
     limit 1;
 
-    if target_user_id is null then
-      email := email_normalizado;
-      status := 'nao_encontrado';
-      user_id := null;
-      return next;
+    if v_target_user_id is null then
+      return query
+      select v_email_normalizado as email, 'nao_encontrado'::text as status, null::uuid as user_id;
       continue;
     end if;
+
+    insert into public.profiles (id, nome, email)
+    values (
+      v_target_user_id,
+      coalesce(v_target_nome, split_part(v_target_email, '@', 1), split_part(v_email_normalizado, '@', 1)),
+      coalesce(v_target_email, v_email_normalizado)
+    )
+    on conflict (id) do update
+      set email = excluded.email,
+          updated_at = now();
 
     if exists (
       select 1
-      from public.grupos_membros gm
+      from public.grupos_membros as gm
       where gm.grupo_id = grupo_uuid
-        and gm.user_id = target_user_id
+        and gm.user_id = v_target_user_id
     ) then
-      email := email_normalizado;
-      status := 'ja_eh_membro';
-      user_id := target_user_id;
-      return next;
+      return query
+      select v_email_normalizado as email, 'ja_eh_membro'::text as status, v_target_user_id as user_id;
       continue;
     end if;
 
     insert into public.grupos_membros (grupo_id, user_id, papel)
-    values (grupo_uuid, target_user_id, 'member')
-    on conflict (grupo_id, user_id) do nothing;
+    values (grupo_uuid, v_target_user_id, 'member')
+    on conflict on constraint grupos_membros_pkey do nothing;
 
-    email := email_normalizado;
-    status := 'convidado';
-    user_id := target_user_id;
-    return next;
+    return query
+    select v_email_normalizado as email, 'convidado'::text as status, v_target_user_id as user_id;
   end loop;
 end;
 $$;
@@ -483,12 +497,24 @@ alter table public.tarefas_compartilhadas_grupo enable row level security;
 alter table public.tarefas_salvas_grupo enable row level security;
 alter table public.reunioes_grupo enable row level security;
 
+-- Usuários veem o próprio perfil + perfis de co-membros em grupos compartilhados
+-- (necessário para views tarefas_compartilhadas_completas e reunioes_grupo_completas)
 drop policy if exists profiles_select_own on public.profiles;
-create policy profiles_select_own
+drop policy if exists profiles_select_group_member on public.profiles;
+create policy profiles_select_group_member
 on public.profiles
 for select
 to authenticated
-using (id = auth.uid());
+using (
+  id = auth.uid()
+  or exists (
+    select 1
+    from public.grupos_membros gm1
+    join public.grupos_membros gm2 on gm1.grupo_id = gm2.grupo_id
+    where gm1.user_id = auth.uid()
+      and gm2.user_id = profiles.id
+  )
+);
 
 drop policy if exists profiles_insert_own on public.profiles;
 create policy profiles_insert_own
@@ -574,12 +600,22 @@ for delete
 to authenticated
 using (owner_id = auth.uid());
 
+-- Membros podem ver todas as linhas de grupos em que participam
+-- (necessário para o fallback direto em listarIntegrantesGrupo e para a view grupos_do_usuario)
 drop policy if exists grupos_membros_select_self on public.grupos_membros;
-create policy grupos_membros_select_self
+drop policy if exists grupos_membros_select_group_member on public.grupos_membros;
+create policy grupos_membros_select_group_member
 on public.grupos_membros
 for select
 to authenticated
-using (user_id = auth.uid());
+using (
+  exists (
+    select 1
+    from public.grupos_membros gm_self
+    where gm_self.grupo_id = grupos_membros.grupo_id
+      and gm_self.user_id = auth.uid()
+  )
+);
 
 drop policy if exists grupos_membros_insert_owner on public.grupos_membros;
 create policy grupos_membros_insert_owner
@@ -629,6 +665,16 @@ using (
     where g.id = grupos_membros.grupo_id
       and g.owner_id = auth.uid()
   )
+);
+
+drop policy if exists grupos_membros_delete_self_member on public.grupos_membros;
+create policy grupos_membros_delete_self_member
+on public.grupos_membros
+for delete
+to authenticated
+using (
+  user_id = auth.uid()
+  and papel = 'member'
 );
 
 drop policy if exists tarefas_comp_grupo_select_member on public.tarefas_compartilhadas_grupo;
@@ -784,5 +830,54 @@ grant select, insert, update, delete on tables to authenticated;
 
 alter default privileges in schema public
 grant execute on functions to authenticated;
+
+do $$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    if not exists (
+      select 1
+      from pg_publication_tables
+      where pubname = 'supabase_realtime'
+        and schemaname = 'public'
+        and tablename = 'tarefas_compartilhadas_grupo'
+    ) then
+      alter publication supabase_realtime add table public.tarefas_compartilhadas_grupo;
+    end if;
+
+    if not exists (
+      select 1
+      from pg_publication_tables
+      where pubname = 'supabase_realtime'
+        and schemaname = 'public'
+        and tablename = 'tarefas_salvas_grupo'
+    ) then
+      alter publication supabase_realtime add table public.tarefas_salvas_grupo;
+    end if;
+
+    if not exists (
+      select 1
+      from pg_publication_tables
+      where pubname = 'supabase_realtime'
+        and schemaname = 'public'
+        and tablename = 'reunioes_grupo'
+    ) then
+      alter publication supabase_realtime add table public.reunioes_grupo;
+    end if;
+
+    if not exists (
+      select 1
+      from pg_publication_tables
+      where pubname = 'supabase_realtime'
+        and schemaname = 'public'
+        and tablename = 'grupos_membros'
+    ) then
+      alter publication supabase_realtime add table public.grupos_membros;
+    end if;
+  end if;
+exception
+  when undefined_table then null;
+  when undefined_object then null;
+end;
+$$;
 
 commit;

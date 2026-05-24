@@ -2,13 +2,32 @@ import { StyleSheet } from 'react-native';
 
 import { colors, radius, spacing } from '@/constants/tokens';
 
-export const styles = StyleSheet.create({
-  screen: {
-    backgroundColor: colors.surface,
+export const landingStyles = StyleSheet.create({
+  landingRoot: {
+    flex: 1,
+    backgroundColor: colors.surface
+  },
+  landingTop: {
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
-    paddingBottom: spacing.xl,
     gap: spacing.sm
+  },
+  landingMiddle: {
+    flex: 1,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingBottom: spacing.xl
+  },
+  emptyStateText: {
+    color: '#A0AFBF',
+    fontFamily: 'Inter_400Regular',
+    fontSize: 13
   },
   header: {
     gap: spacing.sm
@@ -20,12 +39,10 @@ export const styles = StyleSheet.create({
     letterSpacing: 1.8
   },
   title: {
-    marginTop: 0,
     color: colors.onSurface,
     fontFamily: 'Manrope_700Bold',
     fontSize: 32,
-    lineHeight: 40,
-    paddingBottom: 2
+    lineHeight: 40
   },
   heroCard: {
     borderRadius: radius.md,
@@ -104,22 +121,22 @@ export const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     fontSize: 11
   },
-  topicList: {
+  recentList: {
     gap: spacing.xs
   },
-  topicCard: {
+  recentItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: '#E3E9F2',
     backgroundColor: '#FFFFFF',
-    minHeight: 72,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm
+    minHeight: 60
   },
-  topicIconWrap: {
+  recentIconWrap: {
     width: 32,
     height: 32,
     borderRadius: radius.md,
@@ -127,60 +144,156 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center'
   },
-  topicTexts: {
+  recentTexts: {
     flex: 1
   },
-  topicTitle: {
+  recentPreview: {
     color: '#1C2C45',
-    fontFamily: 'Inter_700Bold',
-    fontSize: 14
+    fontFamily: 'Inter_500Medium',
+    fontSize: 13,
+    lineHeight: 18
   },
-  topicSubtitle: {
+  recentDate: {
     marginTop: 2,
     color: '#76839A',
-    fontFamily: 'Inter_500Medium',
+    fontFamily: 'Inter_400Regular',
     fontSize: 11
   },
-  composerCard: {
-    marginTop: spacing.xs,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: '#DCE4F0',
-    backgroundColor: '#F7FAFF',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
-    gap: spacing.xs
+  recentDeleteButton: {
+    padding: spacing.xs
+  }
+});
+
+export const chatStyles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: colors.surface
   },
-  composerLabel: {
-    color: '#294671',
-    fontFamily: 'Inter_700Bold',
-    fontSize: 12
-  },
-  composerRow: {
-    minHeight: 42,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: '#D8E2F0',
-    backgroundColor: '#FFFFFF',
-    paddingLeft: 12,
-    paddingRight: 6,
+  chatHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.xs
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E3E9F2',
+    backgroundColor: '#FFFFFF'
   },
-  composerPlaceholder: {
+  backButton: {
+    width: 34,
+    height: 34,
+    borderRadius: radius.pill,
+    backgroundColor: '#F0F4FA',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  chatHeaderTitle: {
     flex: 1,
+    color: '#162944',
+    fontFamily: 'Manrope_700Bold',
+    fontSize: 16
+  },
+  chatHeaderStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5
+  },
+  chatHeaderStatusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: radius.pill,
+    backgroundColor: '#3EE089'
+  },
+  chatHeaderStatusText: {
+    color: '#3EE089',
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 11
+  },
+  messageList: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+    gap: spacing.sm
+  },
+  bubble: {
+    maxWidth: '82%',
+    borderRadius: radius.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm
+  },
+  userBubble: {
+    alignSelf: 'flex-end',
+    backgroundColor: '#0A3D9F',
+    borderBottomRightRadius: radius.sm
+  },
+  assistantBubble: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E3E9F2',
+    borderBottomLeftRadius: radius.sm
+  },
+  bubbleText: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    lineHeight: 21
+  },
+  userText: {
+    color: '#FFFFFF'
+  },
+  assistantText: {
+    color: colors.onSurface
+  },
+  loadingDots: {
     color: '#8996AA',
     fontFamily: 'Inter_400Regular',
-    fontSize: 12
+    fontSize: 18,
+    letterSpacing: 4
   },
-  composerSendButton: {
-    width: 30,
-    height: 30,
-    borderRadius: radius.pill,
+  composer: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: '#D0DBEC',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#101F39',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.07,
+    shadowRadius: 12,
+    elevation: 8
+  },
+  composerInput: {
+    flex: 1,
+    minHeight: 36,
+    maxHeight: 120,
+    borderRadius: radius.md,
+    borderWidth: 1.5,
+    borderColor: '#C8D6EA',
+    backgroundColor: '#F4F8FF',
+    paddingHorizontal: spacing.sm,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.xs,
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    color: colors.onSurface
+  },
+  composerInputFocused: {
+    borderColor: '#2563EB',
+    backgroundColor: '#FFFFFF'
+  },
+  sendButton: {
+    minWidth: 52,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.md,
     backgroundColor: '#072C78',
     alignItems: 'center',
     justifyContent: 'center'
+  },
+  sendButtonDisabled: {
+    backgroundColor: '#B0BEC5'
   }
 });

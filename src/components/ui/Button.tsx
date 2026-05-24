@@ -12,31 +12,25 @@ type ButtonProps = {
 };
 
 export const Button = ({ title, onPress, variant = 'primary', style, disabled }: ButtonProps) => {
-  if (variant === 'primary') {
-    return (
-      <Pressable
-        onPress={onPress}
-        disabled={disabled}
-        style={({ pressed }) => [styles.base, styles.primary, style, pressed && !disabled && styles.pressed, disabled && styles.disabled]}
-      >
-        <Text style={[styles.label, styles.primaryText]}>{title}</Text>
-      </Pressable>
-    );
-  }
+  const baseStyles = [
+    styles.base,
+    variant === 'primary' ? styles.primary : variant === 'secondary' ? styles.secondary : styles.textOnly,
+    style,
+    disabled && styles.disabled
+  ];
+
+  const labelStyles = [
+    styles.label,
+    variant === 'primary' ? styles.primaryText : variant === 'secondary' ? styles.secondaryText : styles.textText
+  ];
 
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      style={({ pressed }) => [
-        styles.base,
-        variant === 'secondary' ? styles.secondary : styles.textOnly,
-        style,
-        pressed && !disabled && styles.pressed,
-        disabled && styles.disabled
-      ]}
+      style={({ pressed }) => [...baseStyles, pressed && !disabled && styles.pressed]}
     >
-      <Text style={[styles.label, variant === 'secondary' ? styles.secondaryText : styles.textText]}>{title}</Text>
+      <Text style={labelStyles}>{title}</Text>
     </Pressable>
   );
 };
@@ -47,10 +41,20 @@ const styles = StyleSheet.create({
     minHeight: 50,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: spacing.md
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm
   },
   primary: {
     backgroundColor: '#0A3D9F'
+  },
+  secondary: {
+    backgroundColor: '#F3F7FC',
+    borderWidth: 1,
+    borderColor: '#D2DCE8'
+  },
+  textOnly: {
+    minHeight: 40,
+    backgroundColor: 'transparent'
   },
   label: {
     fontFamily: 'Inter_700Bold',
@@ -60,25 +64,16 @@ const styles = StyleSheet.create({
   primaryText: {
     color: colors.onPrimary
   },
-  secondary: {
-    backgroundColor: '#F3F7FC',
-    borderWidth: 1,
-    borderColor: '#D2DCE8'
-  },
   secondaryText: {
     color: '#1B335A'
-  },
-  textOnly: {
-    backgroundColor: 'transparent',
-    minHeight: 40
   },
   textText: {
     color: '#0A3D9F'
   },
   pressed: {
-    opacity: 0.9
+    opacity: 0.85
   },
   disabled: {
-    opacity: 0.5
+    opacity: 0.45
   }
 });

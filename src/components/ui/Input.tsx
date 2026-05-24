@@ -55,11 +55,7 @@ export const Input = ({
 
   const maskedDisplayValue = useMemo(() => {
     if (!useDelayedSecureMask || !value) return '';
-
-    return value
-      .split('')
-      .map((char, index) => (index === revealedIndex ? char : '•'))
-      .join('');
+    return value.split('').map((char, index) => (index === revealedIndex ? char : '•')).join('');
   }, [useDelayedSecureMask, value, revealedIndex]);
 
   const showIosPreview = showKeyboardPreview && Platform.OS === 'ios';
@@ -81,12 +77,7 @@ export const Input = ({
     setIsPasswordVisible(false);
   }, [secureTextEntry]);
 
-  useEffect(
-    () => () => {
-      clearRevealTimer();
-    },
-    []
-  );
+  useEffect(() => () => { clearRevealTimer(); }, []);
 
   const handleChangeText = (text: string) => {
     const previousValue = value || '';
@@ -98,9 +89,7 @@ export const Input = ({
 
     if (text.length > previousValue.length) {
       setRevealedIndex(text.length - 1);
-      revealTimeoutRef.current = setTimeout(() => {
-        setRevealedIndex(null);
-      }, secureRevealDurationMs);
+      revealTimeoutRef.current = setTimeout(() => { setRevealedIndex(null); }, secureRevealDurationMs);
       return;
     }
 
@@ -111,7 +100,7 @@ export const Input = ({
     <>
       <View style={styles.wrapper}>
         <Text style={styles.label}>{label}</Text>
-        <View style={styles.inputFrame}>
+        <View style={[styles.inputFrame, isFocused && styles.inputFrameFocused]}>
           <TextInput
             value={value}
             onChangeText={handleChangeText}
@@ -121,28 +110,22 @@ export const Input = ({
             placeholderTextColor={colors.muted}
             style={[
               styles.input,
-              canTogglePassword ? styles.inputWithRightAction : null,
-              multiline ? styles.multiline : null,
-              useDelayedSecureMask ? styles.hiddenSecureText : null
+              canTogglePassword && styles.inputWithRightAction,
+              multiline && styles.multiline,
+              useDelayedSecureMask && styles.hiddenSecureText
             ]}
             multiline={multiline}
             onFocus={() => {
               setIsFocused(true);
               if (showKeyboardPreview && Platform.OS === 'android') {
-                showPreview({
-                  value,
-                  secure: effectiveSecureTextEntry,
-                  multiline: !!multiline
-                });
+                showPreview({ value, secure: effectiveSecureTextEntry, multiline: !!multiline });
               }
             }}
             onBlur={() => {
               setIsFocused(false);
               setRevealedIndex(null);
               clearRevealTimer();
-              if (showKeyboardPreview && Platform.OS === 'android') {
-                hidePreview();
-              }
+              if (showKeyboardPreview && Platform.OS === 'android') hidePreview();
             }}
             inputAccessoryViewID={showIosPreview ? accessoryId : undefined}
           />
@@ -187,7 +170,7 @@ export const Input = ({
 
 const styles = StyleSheet.create({
   wrapper: {
-    gap: spacing.xs
+    gap: spacing.xxs
   },
   label: {
     fontFamily: 'Inter_600SemiBold',
@@ -196,22 +179,26 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     textTransform: 'uppercase'
   },
+  inputFrame: {
+    position: 'relative',
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: '#DDE5EF'
+  },
+  inputFrameFocused: {
+    borderColor: '#2563EB'
+  },
   input: {
     backgroundColor: '#FFFFFF',
     borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: '#DDE5EF',
     paddingHorizontal: spacing.md,
-    minHeight: 44,
+    minHeight: 46,
     fontFamily: 'Inter_400Regular',
     color: colors.onSurface,
     fontSize: 14
   },
   inputWithRightAction: {
     paddingRight: spacing.xl + spacing.md
-  },
-  inputFrame: {
-    position: 'relative'
   },
   passwordToggle: {
     position: 'absolute',
@@ -256,7 +243,7 @@ const styles = StyleSheet.create({
     color: '#6F7A89'
   },
   previewValue: {
-    marginTop: 2,
+    marginTop: spacing.xxs,
     fontFamily: 'Inter_600SemiBold',
     fontSize: 15,
     color: '#10243E'

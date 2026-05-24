@@ -1,5 +1,6 @@
 import React, { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
 
+import { supabase } from '@/config/supabase.config';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabaseService } from '@/services/supabase.service';
 import { Task, TaskFilters } from '@/types/app.types';
@@ -31,6 +32,27 @@ const defaultFilters: TaskFilters = {
   status: 'Todos'
 };
 
+const sortTasksByDueDate = (items: Task[]): Task[] =>
+  [...items].sort((left, right) => {
+    const leftTime = new Date(parseUiDate(left.date)).getTime();
+    const rightTime = new Date(parseUiDate(right.date)).getTime();
+
+    const leftInvalid = Number.isNaN(leftTime);
+    const rightInvalid = Number.isNaN(rightTime);
+
+    if (leftInvalid && rightInvalid) {
+      return left.title.localeCompare(right.title, 'pt-BR');
+    }
+
+    if (leftInvalid) return 1;
+    if (rightInvalid) return -1;
+
+    const dateDiff = leftTime - rightTime;
+    if (dateDiff !== 0) return dateDiff;
+
+    return left.title.localeCompare(right.title, 'pt-BR');
+  });
+
 const TasksContext = createContext<TasksContextValue | undefined>(undefined);
 
 export const TasksProvider = ({ children }: { children: ReactNode }) => {
@@ -45,13 +67,37 @@ export const TasksProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     const result = await supabaseService.listarTarefas(user.id);
     if (result.success && result.data) {
-      setTasks(result.data.map(fromDbTask));
+      setTasks(sortTasksByDueDate(result.data.map(fromDbTask)));
     }
     setLoading(false);
   };
 
   useEffect(() => {
     refreshTasks();
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel(`tarefas-realtime-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tarefas',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          void refreshTasks();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
   }, [user?.id]);
 
   const addTask = async (task: Omit<Task, 'id' | 'completed'>) => {
@@ -140,13 +186,15 @@ export const TasksProvider = ({ children }: { children: ReactNode }) => {
 
   const filteredTasks = useMemo(
     () =>
-      tasks.filter((task) => {
-        const typeOk = filters.type === 'Todos' || task.type === filters.type;
-        const statusOk = filters.status === 'Todos' || task.completed;
-        const periodOk = filterByPeriod(task, filters.period);
+      sortTasksByDueDate(
+        tasks.filter((task) => {
+          const typeOk = filters.type === 'Todos' || task.type === filters.type;
+          const statusOk = filters.status === 'Todos' || task.completed;
+          const periodOk = filterByPeriod(task, filters.period);
 
-        return typeOk && statusOk && periodOk;
-      }),
+          return typeOk && statusOk && periodOk;
+        })
+      ),
     [filters, tasks]
   );
 
