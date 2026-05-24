@@ -228,7 +228,8 @@ after insert on auth.users
 for each row
 execute function public.handle_new_user();
 
-create or replace view public.tarefas_completas as
+create or replace view public.tarefas_completas
+with (security_invoker = true) as
 select
   t.id,
   t.user_id,
@@ -245,7 +246,8 @@ select
 from public.tarefas t
 left join public.materias m on m.id = t.materia_id;
 
-create or replace view public.horarios_completos as
+create or replace view public.horarios_completos
+with (security_invoker = true) as
 select
   h.id,
   h.user_id,
@@ -259,7 +261,8 @@ select
 from public.horarios h
 join public.materias m on m.id = h.materia_id;
 
-create or replace view public.grupos_do_usuario as
+create or replace view public.grupos_do_usuario
+with (security_invoker = true) as
 select
   gm.user_id,
   gm.grupo_id,
@@ -272,7 +275,8 @@ select
 from public.grupos_membros gm
 join public.grupos_estudo g on g.id = gm.grupo_id;
 
-create or replace view public.tarefas_compartilhadas_completas as
+create or replace view public.tarefas_compartilhadas_completas
+with (security_invoker = true) as
 select
   tcg.id,
   tcg.grupo_id,
@@ -294,7 +298,8 @@ join public.tarefas t on t.id = tcg.tarefa_id
 left join public.materias m on m.id = t.materia_id
 left join public.profiles p on p.id = tcg.compartilhado_por;
 
-create or replace view public.reunioes_grupo_completas as
+create or replace view public.reunioes_grupo_completas
+with (security_invoker = true) as
 select
   rg.id,
   rg.grupo_id,

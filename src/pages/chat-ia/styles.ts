@@ -268,17 +268,15 @@ export const chatStyles = StyleSheet.create({
   },
   composerInput: {
     flex: 1,
-    minHeight: 36,
-    maxHeight: 120,
+    height: 38,
     borderRadius: radius.md,
     borderWidth: 1.5,
     borderColor: '#C8D6EA',
     backgroundColor: '#F4F8FF',
     paddingHorizontal: spacing.sm,
-    paddingTop: spacing.xs,
-    paddingBottom: spacing.xs,
+    paddingVertical: 0,
     fontFamily: 'Inter_400Regular',
-    fontSize: 14,
+    fontSize: 16,
     color: colors.onSurface
   },
   composerInputFocused: {
@@ -297,3 +295,44 @@ export const chatStyles = StyleSheet.create({
     backgroundColor: '#B0BEC5'
   }
 });
+
+export const markdownStyles = {
+  body: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    lineHeight: 21,
+    color: colors.onSurface,
+    margin: 0,
+    padding: 0
+  },
+  strong: {
+    fontFamily: 'Inter_700Bold'
+  },
+  em: {
+    fontFamily: 'Inter_400Regular',
+    fontStyle: 'italic' as const
+  },
+  bullet_list: {
+    marginTop: 2,
+    marginBottom: 2
+  },
+  ordered_list: {
+    marginTop: 2,
+    marginBottom: 2
+  },
+  list_item: {
+    marginTop: 1,
+    marginBottom: 1
+  },
+  paragraph: {
+    marginTop: 0,
+    marginBottom: 4
+  },
+  code_inline: {
+    fontFamily: 'Inter_400Regular',
+    backgroundColor: '#EEF3FA',
+    color: '#1B335A',
+    borderRadius: 4,
+    paddingHorizontal: 4
+  }
+};

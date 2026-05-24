@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import Markdown from 'react-native-markdown-display';
 
 import { sendChatMessage, type ChatMessage } from '@/services/anthropic.service';
 import {
@@ -20,7 +21,7 @@ import {
   saveConversation,
   type Conversation
 } from '@/services/chat-history.service';
-import { chatStyles, landingStyles } from '@/pages/chat-ia/styles';
+import { chatStyles, landingStyles, markdownStyles } from '@/pages/chat-ia/styles';
 
 type Message = {
   id: string;
@@ -149,15 +150,19 @@ export const ChatIAPage = () => {
                   item.role === 'user' ? chatStyles.userBubble : chatStyles.assistantBubble
                 ]}
               >
-                <Text
-                  style={[
-                    chatStyles.bubbleText,
-                    item.role === 'user' ? chatStyles.userText : chatStyles.assistantText,
-                    item.id === 'loading' && chatStyles.loadingDots
-                  ]}
-                >
-                  {item.content}
-                </Text>
+                {item.role === 'user' || item.id === 'loading' ? (
+                  <Text
+                    style={[
+                      chatStyles.bubbleText,
+                      item.role === 'user' ? chatStyles.userText : chatStyles.assistantText,
+                      item.id === 'loading' && chatStyles.loadingDots
+                    ]}
+                  >
+                    {item.content}
+                  </Text>
+                ) : (
+                  <Markdown style={markdownStyles}>{item.content}</Markdown>
+                )}
               </View>
             )}
           />
@@ -261,9 +266,11 @@ export const ChatIAPage = () => {
           placeholderTextColor="#8996AA"
           selectionColor="#2563EB"
           underlineColorAndroid="transparent"
-          multiline
           maxLength={2000}
           editable={!loading}
+          returnKeyType="send"
+          onSubmitEditing={handleSend}
+          blurOnSubmit={false}
           onFocus={() => setComposerFocused(true)}
           onBlur={() => setComposerFocused(false)}
         />
