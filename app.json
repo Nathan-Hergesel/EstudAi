@@ -16,6 +16,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.herisguel.estudai",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -29,6 +30,12 @@
     "plugins": [
       "@react-native-community/datetimepicker",
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "0321454b-2872-4681-87e9-791bfb7657b5"
+      }
+    },
+    "owner": "herisguel"
   }
 }
